@@ -1,4 +1,4 @@
-# my_shelf
+# My Shelf
 
 Multi Platform Home Library Application.
 
