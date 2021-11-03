@@ -1,6 +1,6 @@
 # my_shelf
 
-Multi Platform Integrated Library Software.
+Multi Platform Home Library Application.
 
 ## Getting Started
 
