@@ -1,4 +1,6 @@
+// import 'dart:html';
 import 'dart:io';
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -13,6 +15,7 @@ import 'package:my_library/Widgets/responsive_ui.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 // import 'package:fluttertoast/fluttertoast.dart';
 
 class AddBook extends StatefulWidget {
@@ -350,7 +353,7 @@ class _AddBookState extends State<AddBook> {
         setState(() {
           _isLoading = true;
         });
-        String fileName = '${_title.text}.jpg';
+        String fileName = '${_title.text}-${_author.text}.jpg';
         db.collection('users').doc(uid).collection(widget.shelf!.getShelfName())
             .add({
           "title": _title.text,
@@ -374,6 +377,10 @@ class _AddBookState extends State<AddBook> {
           "edition_date": _publishDate.text == "" ? "Unknown":_publishDate.text,
           "cover": "",
         }).then((book) {
+          db.collection('users').doc(uid).collection(widget.shelf!.getShelfName()).doc('shelf_data').set({
+            'total_books': FieldValue.increment(1),
+            'shelf_name': widget.shelf!.getShelfName(),
+          }, SetOptions(merge: true));
           uploadImageToFirebase(fileName, book.id);
           db.collection('users').doc(uid).set({
             "shelves": FieldValue.arrayUnion([widget.shelf!.getShelfName()]),
@@ -391,15 +398,31 @@ class _AddBookState extends State<AddBook> {
           //   genre: _genre.text,
           //   dateAdded: DateTime.now().toString(),
           // );
-          Future.delayed(const Duration(seconds: 5), (){
+          Future.delayed(const Duration(seconds: 3), (){
             setState(() {
               _isLoading = false;
             });
-            Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const HomeScreen()),
-                    (route) => false
+            ScaffoldMessenger.of(context).showMaterialBanner(
+                MaterialBanner(
+                  backgroundColor: Theme.of(context).buttonColor,
+                    content: Text('${_title.text} has been added to ${widget.shelf!.shelfName}'),
+                    actions: [
+                      TextButton(
+                        child: const Text('Dismiss'),
+                        onPressed: () => ScaffoldMessenger.of(context)
+                            .hideCurrentMaterialBanner(),
+                      ),
+                    ],
+                ),
             );
+            Future.delayed(const Duration(seconds: 3), () {
+              ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
+              Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                      (route) => false
+              );
+            });
           });
         });
       }
@@ -408,7 +431,7 @@ class _AddBookState extends State<AddBook> {
   Future uploadImageToFirebase(String fileName, String bookId) async {
     try {
       TaskSnapshot snapshot = await FirebaseStorage.instance
-          .ref('book_covers/$fileName')
+          .ref('$uid/book_covers/$fileName')
           .putFile(_imageFile);
       if (snapshot.state == TaskState.success) {
         final String downloadUrl = await snapshot.ref.getDownloadURL();
@@ -427,46 +450,103 @@ class _AddBookState extends State<AddBook> {
 
   _imgFromCamera() async {
     final pickedFile = await picker.getImage(source: ImageSource.camera);
-
+    // _cropImage();
     setState(() {
       _imageFile = File(pickedFile!.path);
       _imageTaken = true;
     });
+
   }
 
   _imgFromGallery() async {
     final pickedFile = await picker.getImage(source: ImageSource.gallery);
-
+    // _cropImage();
     setState(() {
       _imageFile = File(pickedFile!.path);
       _imageTaken = true;
     });
+
   }
+
+  // Future<Null> _cropImage() async {
+  //   File? croppedFile = await ImageCropper.cropImage(
+  //       sourcePath: _imageFile.path,
+  //       aspectRatioPresets: Platform.isAndroid
+  //           ? [
+  //         CropAspectRatioPreset.square,
+  //         CropAspectRatioPreset.ratio3x2,
+  //         CropAspectRatioPreset.original,
+  //         CropAspectRatioPreset.ratio4x3,
+  //         CropAspectRatioPreset.ratio16x9
+  //       ]
+  //           : [
+  //         CropAspectRatioPreset.original,
+  //         CropAspectRatioPreset.square,
+  //         CropAspectRatioPreset.ratio3x2,
+  //         CropAspectRatioPreset.ratio4x3,
+  //         CropAspectRatioPreset.ratio5x3,
+  //         CropAspectRatioPreset.ratio5x4,
+  //         CropAspectRatioPreset.ratio7x5,
+  //         CropAspectRatioPreset.ratio16x9
+  //       ],
+  //       androidUiSettings: const AndroidUiSettings(
+  //           toolbarTitle: 'Cropper',
+  //           toolbarColor: Colors.deepOrange,
+  //           toolbarWidgetColor: Colors.white,
+  //           initAspectRatio: CropAspectRatioPreset.original,
+  //           lockAspectRatio: false),
+  //       iosUiSettings: const IOSUiSettings(
+  //         title: 'Cropper',
+  //       ));
+  //   if (croppedFile != null) {
+  //     _imageFile = croppedFile;
+  //     setState(() {
+  //       state = AppState.cropped;
+  //     });
+  //   }
+  // }
 
   void _showPicker(context) {
     showModalBottomSheet(
         context: context,
+        backgroundColor: Theme.of(context).backgroundColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
         builder: (BuildContext bc) {
-          return SafeArea(
-            child: Wrap(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.photo_library_rounded),
-                  title: const Text('Gallery'),
-                  onTap: () {
-                    _imgFromGallery();
-                    Navigator.pop(context);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.photo_camera_rounded),
-                  title: const Text('Camera'),
-                  onTap: () {
-                    _imgFromCamera();
-                    Navigator.pop(context);
-                  },
-                )
-              ],
+          return SizedBox(
+            height: _height/4,
+            child: SafeArea(
+              child: Wrap(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top:19.0, left: 8, bottom: 8),
+                    child: ListTile(
+                      leading: const Icon(Icons.photo_library_rounded),
+                      title: const Text('Gallery'),
+                      onTap: () {
+                        _imgFromGallery();
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                  SizedBox(height: _height/10),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ListTile(
+                      leading: const Icon(Icons.photo_camera_rounded),
+                      title: const Text('Camera'),
+                      onTap: () {
+                        _imgFromCamera();
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         });

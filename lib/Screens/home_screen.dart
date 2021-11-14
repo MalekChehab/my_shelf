@@ -156,11 +156,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   shelvesList() {
     usersCollection.doc(uid).get().then((value) {
-      shelvesStrings = List.castFrom(value.data()!['shelves'] as List);
-      for (String shelf in shelvesStrings) {
-        usersCollection.doc(uid).collection(shelf).get().then((value) {
-          createBookList(value);
-        });
+      if(value.id != 'shelf_data') {
+        if(List.castFrom(value.data()!['shelves']).isNotEmpty) {
+          shelvesStrings = List.castFrom(value.data()!['shelves'] as List);
+          for (String shelf in shelvesStrings) {
+            usersCollection.doc(uid).collection(shelf).get().then((value) {
+              createBookList(value);
+            });
+          }
+        }
       }
     });
     print('${finalBooksList.length} books');
@@ -170,10 +174,14 @@ class _HomeScreenState extends State<HomeScreen> {
   createBookList(QuerySnapshot snapshot) async {
     var docs = snapshot.docs;
     for (var doc in docs) {
-      if (finalBooksList.where((book) => book.id == doc.id).isEmpty) {
-        setState(() {
-          finalBooksList.add(Book.fromFirestore(doc));
-        });
+      if(doc.id!='shelf_data') {
+        if (finalBooksList
+            .where((book) => book.id == doc.id)
+            .isEmpty) {
+          setState(() {
+            finalBooksList.add(Book.fromFirestore(doc));
+          });
+        }
       }
     }
   }

@@ -51,7 +51,7 @@
 //     if (user == null) {
 //       return null;
 //     }
-//     return MyUser(id: user.uid);
+//     return MyUser(id: user.uid, name: user.displayName.toString());
 //   }
 //
 //   Stream<MyUser?> get authStateChanges {
@@ -120,15 +120,17 @@
 //     }
 //   }
 //
-//   Future<void> signOut() async {
+//   Future<String> signOut() async {
 //     try {
 //       final googleSignin = GoogleSignIn();
 //       await googleSignin.signOut();
 //       await _firebaseAuth.signOut();
+//       return "Sign out success";
 //     } on FirebaseAuthException catch (e) {
 //       errorCode = e.code;
-//       Fluttertoast.showToast(
-//           msg: getMessageFromErrorCode(), toastLength: Toast.LENGTH_LONG);
+//     //   Fluttertoast.showToast(
+//     //       msg: getMessageFromErrorCode(), toastLength: Toast.LENGTH_LONG);
+//       return getMessageFromErrorCode();
 //     }
 //   }
 // }

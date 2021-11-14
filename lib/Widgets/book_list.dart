@@ -11,23 +11,8 @@ class BookList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // var bookNotifier = Provider.of<BookNotifier>(context);
 
-    return
-        // GridView.builder(
-        //   itemCount: _books.length,
-        //   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        //     childAspectRatio: 1.3,
-        //     crossAxisCount: 2,
-        //     crossAxisSpacing: 9.0,
-        //     mainAxisSpacing: 9.0,
-        //   ),
-        //   // padding: const EdgeInsets.symmetric(horizontal: 1),
-        //   itemBuilder: (BuildContext context, int index){
-        //     return BookItem(_books[index]);
-        //   },
-        // );
-        ListView.separated(
+    return ListView.separated(
       physics: const BouncingScrollPhysics(),
       separatorBuilder: ((context, index) {
         return Container(
@@ -43,29 +28,5 @@ class BookList extends StatelessWidget {
         return BookItem(_books.elementAt(index));
       }),
     );
-    // ListView.builder(
-    //   itemCount: _books.length,
-    //     itemBuilder: (context, index){
-    //   return Align(
-    //     alignment: Alignment.center,
-    //     child: Container(
-    //       // width: _width / 1.5,
-    //       padding: const EdgeInsets.all(8.0),
-    //       child: Card(
-    //         shape: RoundedRectangleBorder(
-    //           borderRadius: BorderRadius.circular(30),
-    //         ),
-    //         color: Theme
-    //             .of(context)
-    //             .primaryColor,
-    //         elevation: 4,
-    //         child: ListTile(
-    //             title: Center(
-    //                 child: Text(_books[index]
-    //                     .getTitle()))),
-    //       ),
-    //     ),
-    //   );
-    // });
   }
 }

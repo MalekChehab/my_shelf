@@ -30,8 +30,8 @@ class BookItem extends StatelessWidget {
         // }
       },
       child: Container(
-        padding: const EdgeInsets.fromLTRB(30.0, 8, 20, 10),
-        margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 15.0),
+        padding: const EdgeInsets.fromLTRB(20.0, 8, 20, 10),
+        margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 10.0),
         height: 180.0,
         child: Row(
           children: [
