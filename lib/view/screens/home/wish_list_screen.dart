@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:loading_overlay/loading_overlay.dart';
-import 'package:my_library/Models/book.dart';
-import 'package:my_library/Models/shelf.dart';
-import 'package:my_library/Screens/Authentication/welcome_screen.dart';
-import 'package:my_library/Screens/add_book.dart';
-import 'package:my_library/Widgets/book_item.dart';
-import 'package:my_library/Widgets/book_list.dart';
+import 'package:my_library/models/book.dart';
+import 'package:my_library/models/shelf.dart';
+import 'package:my_library/view/screens/auth/welcome_screen.dart';
+import 'package:my_library/view/screens/home/add_book.dart';
+import 'package:my_library/view/widgets/book_item.dart';
+import 'package:my_library/view/widgets/book_list.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'home_screen.dart';
@@ -38,8 +38,7 @@ class _WishListScreenState extends State<WishListScreen> {
             color: Theme.of(context).indicatorColor,
           ),
           child: NestedScrollView(
-            headerSliverBuilder:
-                (BuildContext context, bool innerBoxIsScrolled) {
+            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
               return <Widget>[
                 SliverAppBar(
                   automaticallyImplyLeading: false,
@@ -81,20 +80,15 @@ class _WishListScreenState extends State<WishListScreen> {
               ];
             },
             body: Center(
-              // child: StreamBuilder(
-              //   stream: shelvesList(),
-              //   // test(),
-              //   builder: (context, snapshot) {
-              //     if (snapshot.connectionState == ConnectionState.waiting) {
-              //       return CircularProgressIndicator(
-              //         color: Theme.of(context).indicatorColor,
-              //       );
-              //     } else if (snapshot.hasError) {
-              //       return Text(snapshot.error.toString());
-              //     }
-              //     return BookList(finalBooksList);
-              //   },
-              // ),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 40 ,right:10.0, left: 20),
+                child: Image.asset(
+                  'assets/images/home.png',
+                  // 'assets/images/wishlist.png',
+                  // height: 25.0,
+                  // fit: BoxFit.scaleDown,
+                ),
+              ),
             ),
           ),
         ),

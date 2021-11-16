@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
-import 'package:my_library/Models/book.dart';
-import 'package:my_library/Screens/add_book.dart';
-import 'package:my_library/Screens/book_details.dart';
+import 'package:my_library/models/book.dart';
+import 'package:my_library/view/screens/home/add_book.dart';
+import 'package:my_library/view/screens/home/book_details.dart';
 // import 'package:book_library/src/models/notifiers/book_notifier.dart';
 // import 'package:book_library/src/widgets/book_cover.dart';
 // import 'package:book_library/src/widgets/star_rating.dart';
 // import 'package:book_library/src/screens/book/book_details.dart';
 // import 'package:book_library/src/style.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 class BookItem extends StatelessWidget {
   final Book _book;
@@ -46,10 +47,9 @@ class BookItem extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: _book.coverUrl == "" ? const Placeholder()
-                        : Image.network(
-                      _book.coverUrl.toString(),
-                      // height: 170,
-                      // width: 500,
+                        : FadeInImage.memoryNetwork(
+                      placeholder: kTransparentImage,
+                      image: _book.coverUrl.toString(),
                       fit: BoxFit.cover,
                     ),
                   ),

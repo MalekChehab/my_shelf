@@ -2,9 +2,8 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:my_library/Screens/Authentication/welcome_screen.dart';
-
-import 'home_screen.dart';
+import 'package:my_library/view/screens/auth/welcome_screen.dart';
+import 'package:my_library/view/screens/home/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   @override

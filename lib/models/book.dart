@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:my_library/Models/shelf.dart';
-import 'package:my_library/Models/tag.dart';
+import 'package:my_library/models/shelf.dart';
+import 'package:my_library/models/tag.dart';
 
 class Book {
   late Shelf? shelf;

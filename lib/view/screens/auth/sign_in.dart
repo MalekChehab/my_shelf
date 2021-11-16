@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:loading_overlay/loading_overlay.dart';
-import 'package:my_library/Models/user.dart';
-import 'package:my_library/Screens/Authentication/reset_password.dart';
-import 'package:my_library/Widgets/book_text_form_field.dart';
-import 'package:my_library/Widgets/responsive_ui.dart';
+import 'package:my_library/models/user.dart';
+import 'package:my_library/view/screens/auth/reset_password.dart';
+import 'package:my_library/view/widgets/book_text_form_field.dart';
+import 'package:my_library/Theme/responsive_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import '../home_screen.dart';
+import '../home/home_screen.dart';
 import 'package:my_library/Services/auth.dart';
 
 class SignIn extends StatefulWidget {

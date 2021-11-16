@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'Screens/splash_screen.dart';
+import 'package:my_library/view/screens/home/splash_screen.dart';
 import 'Theme/theme.dart';
 
 Future main() async{

@@ -1,5 +1,5 @@
-import 'package:my_library/Models/book.dart';
-import 'package:my_library/Models/user.dart';
+import 'package:my_library/models/book.dart';
+import 'package:my_library/models/user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DatabaseService {

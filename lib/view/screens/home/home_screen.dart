@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:loading_overlay/loading_overlay.dart';
-import 'package:my_library/Models/book.dart';
-import 'package:my_library/Models/shelf.dart';
-import 'package:my_library/Screens/Authentication/welcome_screen.dart';
-import 'package:my_library/Screens/add_book.dart';
-import 'package:my_library/Screens/wish_list_screen.dart';
-import 'package:my_library/Widgets/book_item.dart';
-import 'package:my_library/Widgets/book_list.dart';
+import 'package:my_library/models/book.dart';
+import 'package:my_library/models/shelf.dart';
+import 'package:my_library/view/screens/auth/welcome_screen.dart';
+import 'package:my_library/view/screens/home/add_book.dart';
+import 'package:my_library/view/screens/home/wish_list_screen.dart';
+import 'package:my_library/view/widgets/book_item.dart';
+import 'package:my_library/view/widgets/book_list.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class HomeScreen extends StatefulWidget {

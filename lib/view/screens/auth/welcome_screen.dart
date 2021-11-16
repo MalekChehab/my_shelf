@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:my_library/Screens/Authentication/register.dart';
-import 'package:my_library/Screens/Authentication/sign_in.dart';
-import 'package:my_library/Widgets/book_text_form_field.dart';
-import 'package:my_library/Widgets/responsive_ui.dart';
+import 'package:my_library/view/screens/auth/register.dart';
+import 'package:my_library/view/screens/auth/sign_in.dart';
+import 'package:my_library/view/widgets/book_text_form_field.dart';
+import 'package:my_library/Theme/responsive_ui.dart';
 
 class WelcomeScreen extends StatelessWidget {
   WelcomeScreen({Key? key}) : super(key: key);

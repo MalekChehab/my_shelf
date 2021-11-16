@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:my_library/Models/shelf.dart';
-import 'package:my_library/Models/user.dart';
-import 'package:my_library/Screens/add_book.dart';
-import 'package:my_library/Widgets/book_text_form_field.dart';
+import 'package:my_library/models/shelf.dart';
+import 'package:my_library/models/user.dart';
+import 'package:my_library/view/screens/home/add_book.dart';
+import 'package:my_library/view/widgets/book_text_form_field.dart';
 import 'package:flutter/material.dart';
-import 'package:my_library/Widgets/responsive_ui.dart';
+import 'package:my_library/Theme/responsive_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class SelectShelf extends StatefulWidget {
@@ -72,9 +72,15 @@ class _SelectShelfState extends State<SelectShelf> {
                               //now we have a list of Shelf consists of the 'shelves' field in each document
                             }
                           });
-                          return _shelves.isEmpty ? const Center(
-                            child: Text(
-                                "You don't have any shelf, please add a shelf"),
+                          return _shelves.isEmpty ?  Center(
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 40 ,right:10.0, left: 20),
+                              child: Image.asset(
+                                'assets/images/shelves.png',
+                                // height: 25.0,
+                                // fit: BoxFit.scaleDown,
+                              ),
+                            ),
                           ) :
                           ListView.builder(
                               itemCount: _shelves.length,

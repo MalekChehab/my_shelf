@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loading_overlay/loading_overlay.dart';
-import 'package:my_library/Screens/Authentication/sign_in.dart';
-import 'package:my_library/Widgets/book_text_form_field.dart';
-import 'package:my_library/Widgets/responsive_ui.dart';
+import 'package:my_library/view/screens/auth/sign_in.dart';
+import 'package:my_library/view/widgets/book_text_form_field.dart';
+import 'package:my_library/Theme/responsive_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class ResetPassword extends StatefulWidget {
