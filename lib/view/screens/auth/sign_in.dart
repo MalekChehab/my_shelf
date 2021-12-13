@@ -3,23 +3,24 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:loading_overlay/loading_overlay.dart';
-import 'package:my_library/models/user.dart';
+import 'package:my_library/services/custom_exception.dart';
+import 'package:my_library/services/general_providers.dart';
 import 'package:my_library/view/screens/auth/reset_password.dart';
 import 'package:my_library/view/widgets/book_text_form_field.dart';
 import 'package:my_library/Theme/responsive_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../home/home_screen.dart';
-import 'package:my_library/Services/auth.dart';
 
-class SignIn extends StatefulWidget {
-  SignIn({Key? key}) : super(key: key);
+class SignIn extends ConsumerStatefulWidget {
+  const SignIn({Key? key}) : super(key: key);
 
   @override
-  State<SignIn> createState() => _SignInState();
+  SignInState createState() => SignInState();
 }
 
-class _SignInState extends State<SignIn> {
+class SignInState extends ConsumerState<SignIn> {
   final _formKey = GlobalKey<FormState>();
   late double _height;
   late double _width;
@@ -28,13 +29,14 @@ class _SignInState extends State<SignIn> {
   late bool _medium;
   final TextEditingController _email = TextEditingController();
   final TextEditingController _password = TextEditingController();
-  late final FirebaseAuth _auth = FirebaseAuth.instance;
-  late MyUser newUser;
   late bool _isLoading = false;
-  FirebaseFirestore db = FirebaseFirestore.instance;
+  late var _auth;
+  late var _db;
 
   @override
   Widget build(BuildContext context) {
+    _db = ref.watch(firebaseFirestoreProvider);
+    _auth = ref.watch(authServicesProvider);
     _height = MediaQuery.of(context).size.height;
     _width = MediaQuery.of(context).size.width;
     _pixelRatio = MediaQuery.of(context).devicePixelRatio;
@@ -42,7 +44,7 @@ class _SignInState extends State<SignIn> {
     _medium = ResponsiveWidget.isScreenMedium(_width, _pixelRatio);
     return Material(
       child: Scaffold(
-        body: Container(
+        body: SizedBox(
           width: _width,
           height: _height,
           child: LoadingOverlay(
@@ -81,12 +83,12 @@ class _SignInState extends State<SignIn> {
                   SizedBox(
                     height: _height / 40.0,
                   ),
-                  FlatButton(
-                    child: Text('Forgot password?'),
+                  TextButton(
+                    child: const Text('Forgot password?'),
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => ResetPassword()),
+                        MaterialPageRoute(builder: (_) => const ResetPassword()),
                       );
                     },
                   ),
@@ -158,8 +160,6 @@ class _SignInState extends State<SignIn> {
     );
   }
 
-  late String errorCode;
-
   Widget confirmButton(BuildContext context) {
     return Button(
         elevation: 10,
@@ -173,35 +173,22 @@ class _SignInState extends State<SignIn> {
             ),
           ),
         ),
-        onPressed: () async {
-          if (_formKey.currentState!.validate()) {
-            setState(() {
-              _isLoading = true;
-            });
-            try {
-              await _auth
-                  .signInWithEmailAndPassword(
-                      email: _email.text, password: _password.text)
-                  .then((value) {
-                setState(() {
-                  _isLoading = false;
-                });
-                Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const HomeScreen()),
-                    (route) => false);
-              });
-            } on FirebaseAuthException catch (e) {
-              setState(() {
-                _isLoading = false;
-              });
-              errorCode = e.code;
-              Fluttertoast.showToast(
-                  msg: getMessageFromErrorCode(),
-                  toastLength: Toast.LENGTH_LONG);
+      onPressed: () async {
+        if (_formKey.currentState!.validate()) {
+          try {
+            bool _signedIn = await _auth.signIn(email: _email.text, password: _password.text);
+            if (_signedIn) {
+              Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const HomeScreen2()),
+                      (route) => false);
             }
+          } on CustomException catch (e) {
+            Fluttertoast.showToast(
+                msg: e.message.toString(), toastLength: Toast.LENGTH_LONG);
           }
-        });
+        }
+      },
+    );
   }
 
   Widget googleSignUp(BuildContext context) {
@@ -226,90 +213,22 @@ class _SignInState extends State<SignIn> {
         ]),
         onPressed: () async {
           try {
-            setState(() {
-              _isLoading = true;
-            });
-            final GoogleSignInAccount? googleUser =
-            await GoogleSignIn().signIn();
-
-            // Obtain the auth details from the request
-            final GoogleSignInAuthentication? googleAuth =
-            await googleUser?.authentication;
-
-            // Create a new credential
-            final credential = GoogleAuthProvider.credential(
-              accessToken: googleAuth?.accessToken,
-              idToken: googleAuth?.idToken,
-            );
-            // Once signed in, return the UserCredential
-            await _auth.signInWithCredential(credential)
-                .then((value) {
-              newUser = MyUser(
-                id: _auth.currentUser!.uid,
-                name: _auth.currentUser!.displayName.toString(),
-                totalBooks: 0,
-              );
-              _auth.currentUser!.updateDisplayName(newUser.getName());
-              db.collection('users').doc(newUser.getId()).set({
-                'name': newUser.getName(),
+            bool _signedIn = await _auth.googleSignIn();
+            if (_signedIn) {
+              _auth.getCurrentUser().updateDisplayName(_auth.getUserName());
+              _db.collection('users').doc(_auth.getUserId()).set({
+                'name':_auth.getUserName(),
               }, SetOptions(merge: true));
-              setState(() {
-                _isLoading = false;
-              });
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => HomeScreen()),
-                    (route) => false,
-              );
-            });
-          } catch (e) {
-            setState(() {
-              _isLoading = false;
-            });
-            errorCode = e.toString();
+              Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const HomeScreen2()),
+                  (route) => false);
+            }
+          } on CustomException catch (e) {
             Fluttertoast.showToast(
-              msg: getMessageFromErrorCode(),
-              toastLength: Toast.LENGTH_LONG,
-            );
+                msg: e.message.toString(), toastLength: Toast.LENGTH_LONG);
           }
         },
       ),
     );
-  }
-
-  String getMessageFromErrorCode() {
-    switch (errorCode) {
-      case "ERROR_EMAIL_ALREADY_IN_USE":
-      case "account-exists-with-different-credential":
-      case "email-already-in-use":
-        return "Email already registered.";
-        break;
-      case "ERROR_WRONG_PASSWORD":
-      case "wrong-password":
-        return "Wrong email/password combination.";
-        break;
-      case "ERROR_USER_NOT_FOUND":
-      case "user-not-found":
-        return "No user found with this email.";
-        break;
-      case "ERROR_USER_DISABLED":
-      case "user-disabled":
-        return "User disabled.";
-        break;
-      case "ERROR_TOO_MANY_REQUESTS":
-      case "operation-not-allowed":
-        return "Too many requests to log into this account.";
-        break;
-      case "ERROR_OPERATION_NOT_ALLOWED":
-        return "Server error, please try again later.";
-        break;
-      case "ERROR_INVALID_EMAIL":
-      case "invalid-email":
-        return "Email address is invalid.";
-        break;
-      default:
-        return "Login failed. Please try again.";
-        break;
-    }
   }
 }

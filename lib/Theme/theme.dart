@@ -19,6 +19,22 @@ class MyThemes {
     bottomAppBarColor: const Color(0xFF222222),
   );
 
+  // static final scheme = ColorScheme(
+  //     primary: const Color(0xFF1E1E1E),
+      // primaryVariant: primaryVariant,
+      // secondary: const Color(0xFFF6F6F6),
+      // secondaryVariant: secondaryVariant,
+      // surface: surface,
+      // background: background,
+      // error: error,
+      // onPrimary: onPrimary,
+      // onSecondary: onSecondary,
+      // onSurface: onSurface,
+      // onBackground: onBackground,
+      // onError: onError,
+      // brightness: brightness
+  // );
+
   static TextTheme get _darkTextTheme {
     return const TextTheme(
       bodyText1: TextStyle(

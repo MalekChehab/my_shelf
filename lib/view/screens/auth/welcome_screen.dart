@@ -21,7 +21,7 @@ class WelcomeScreen extends StatelessWidget {
     _medium = ResponsiveWidget.isScreenMedium(_width, _pixelRatio);
     return Material(
       child: Scaffold(
-        body: Container(
+        body: SizedBox(
           width: _width,
           height: _height,
           child: SafeArea(
@@ -46,11 +46,6 @@ class WelcomeScreen extends StatelessWidget {
                 SizedBox(height: _height / 6),
                 Button(
                   color: Theme.of(context).textTheme.headline1!.color,
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => Register()),
-                    );
-                  },
                   child: Container(
                     width: _width / 2,
                     height: _height / 13,
@@ -62,11 +57,16 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => const Register()),
+                    );
+                  },
                 ),
                 SizedBox(height: _height / 15,),
-                FlatButton(onPressed: (){
+                TextButton(onPressed: (){
                   Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => SignIn()),
+                    builder: (_) => const SignIn()),
                   );
                 },
                     child: Text(

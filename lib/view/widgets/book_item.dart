@@ -11,7 +11,7 @@ import 'package:my_library/view/screens/home/book_details.dart';
 import 'package:transparent_image/transparent_image.dart';
 
 class BookItem extends StatelessWidget {
-  final Book _book;
+  final Book? _book;
 
   const BookItem(this._book, {Key? key}) : super(key: key);
 
@@ -40,16 +40,16 @@ class BookItem extends StatelessWidget {
               fit: FlexFit.tight,
               flex: 4,
               child: Hero(
-                tag: "SelectedBook-${_book.id}",
+                tag: "SelectedBook-${_book!.id}",
                 transitionOnUserGestures: true,
                 child: Padding(
                   padding: const EdgeInsets.only(right: 10.0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: _book.coverUrl == "" ? const Placeholder()
+                    child: _book!.coverUrl == "" ? const Placeholder()
                         : FadeInImage.memoryNetwork(
                       placeholder: kTransparentImage,
-                      image: _book.coverUrl.toString(),
+                      image: _book!.coverUrl.toString(),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -78,13 +78,13 @@ class BookItem extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          _book.title,
+                          _book!.title,
                           style: Theme.of(context).textTheme.bodyText1,
                         ),
                         Padding(
                           padding: const EdgeInsets.only(top: 10.0),
                           child: Text(
-                            _book.author.join(", "),
+                            _book!.author.join(', '),
                             style: Theme.of(context).textTheme.caption,
                           ),
                         ),
@@ -95,7 +95,7 @@ class BookItem extends StatelessWidget {
                     //   rating: (_book.rating / 2).toDouble(),
                     // ),
                     Text(
-                      _book.genre.toString(),
+                      _book!.genre.toString(),
                       style: Theme.of(context).textTheme.subtitle1,
                     ),
                     Padding(
@@ -106,7 +106,7 @@ class BookItem extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: Text(
-                                _book.shelf!.shelfName,
+                                _book!.shelf!.shelfName,
                                 style: Theme.of(context).textTheme.caption,
                               ),
                             ),
@@ -116,7 +116,7 @@ class BookItem extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(left: 10.0),
                               child: Text(
-                                _book.location.toString(),
+                                _book!.location.toString(),
                                 style: TextStyle(
                                     color: Theme.of(context).hintColor,
                                 ),

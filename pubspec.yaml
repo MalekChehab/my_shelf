@@ -29,15 +29,20 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
   firebase_core:
   cloud_firestore:
   firebase_storage:
-  image_picker:
-  fluttertoast:
   firebase_auth:
   google_sign_in:
+
+  flutter_hooks:
+  hooks_riverpod:
+  rxdart:
+
+  image_picker:
+  fluttertoast:
   font_awesome_flutter:
-  provider:
   loading_overlay:
   image_cropper:
   transparent_image:

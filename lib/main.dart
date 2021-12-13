@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:my_library/view/screens/home/splash_screen.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:my_library/view/screens/splash_screen.dart';
 import 'Theme/theme.dart';
 
 Future main() async{
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
       title: 'My Shelf',
       themeMode: ThemeMode.dark,
       darkTheme: MyThemes.darkTheme,
-      home: SplashScreen(),
+      home: const SplashScreen(),
     );
   }
 }

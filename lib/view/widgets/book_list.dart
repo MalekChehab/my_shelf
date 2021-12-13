@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:my_library/models/book.dart';
 // import 'package:provider/provider.dart';
@@ -5,13 +6,12 @@ import 'package:my_library/models/book.dart';
 import 'package:my_library/view/widgets/book_item.dart';
 
 class BookList extends StatelessWidget {
-  final List<Book> _books;
+  final List<Book?>? _books;
 
   const BookList(this._books, {Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-
     return ListView.separated(
       physics: const BouncingScrollPhysics(),
       separatorBuilder: ((context, index) {
@@ -23,9 +23,9 @@ class BookList extends StatelessWidget {
           ),
         );
       }),
-      itemCount: _books.length,
+      itemCount: _books!.length,
       itemBuilder: ((context, index) {
-        return BookItem(_books.elementAt(index));
+        return BookItem(_books!.elementAt(index));
       }),
     );
   }

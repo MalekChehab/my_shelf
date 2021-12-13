@@ -1,23 +1,23 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:my_library/models/user.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:my_library/services/custom_exception.dart';
+import 'package:my_library/services/general_providers.dart';
 import 'package:my_library/view/widgets/book_text_form_field.dart';
 import 'package:my_library/Theme/responsive_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../home/home_screen.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 
-class Register extends StatefulWidget {
-  Register({Key? key}) : super(key: key);
+class Register extends ConsumerStatefulWidget {
+  const Register({Key? key}) : super(key: key);
 
   @override
-  State<Register> createState() => _RegisterState();
+  RegisterState createState() => RegisterState();
 }
 
-class _RegisterState extends State<Register> {
+class RegisterState extends ConsumerState<Register> {
   final _formKey = GlobalKey<FormState>();
   late double _height;
   late double _width;
@@ -30,14 +30,14 @@ class _RegisterState extends State<Register> {
   final TextEditingController _confirmPassword = TextEditingController();
   bool? _checkBoxValue = false;
   late bool _isButtonEnabled;
-  final _auth = FirebaseAuth.instance;
-  final db = FirebaseFirestore.instance;
-  late String errorCode;
-  late MyUser newUser;
   late bool _isLoading = false;
+  late var _auth;
+  late var _db;
 
   @override
   Widget build(BuildContext context) {
+    _auth = ref.watch(authServicesProvider);
+    _db = ref.watch(firebaseFirestoreProvider);
     _height = MediaQuery.of(context).size.height;
     _width = MediaQuery.of(context).size.width;
     _pixelRatio = MediaQuery.of(context).devicePixelRatio;
@@ -119,6 +119,7 @@ class _RegisterState extends State<Register> {
             ),
             Divider(
               color: Theme.of(context).accentColor,
+              // color: Theme.of(context).colorScheme.secondary,
               endIndent: _width / 5,
               indent: _width / 5,
             ),
@@ -161,7 +162,7 @@ class _RegisterState extends State<Register> {
       keyboardType: TextInputType.visiblePassword,
       icon: Icons.password_outlined,
       validator: (dynamic value) =>
-          value.length < 6 ? 'Must be 6 characters at least' : null,
+      value.length < 6 ? 'Must be 6 characters at least' : null,
     );
   }
 
@@ -172,32 +173,30 @@ class _RegisterState extends State<Register> {
       keyboardType: TextInputType.visiblePassword,
       icon: Icons.password,
       validator: (dynamic value) =>
-          value != _password.text ? 'Must be the same as the password' : null,
+      value != _password.text ? 'Must be the same as the password' : null,
     );
   }
 
   Widget acceptTermsTextRow() {
-    return Container(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: <Widget>[
-          Checkbox(
-              activeColor: Theme.of(context).buttonColor,
-              value: _checkBoxValue,
-              onChanged: (bool? newValue) {
-                setState(() {
-                  _checkBoxValue = newValue;
-                  _isButtonEnabled = newValue!;
-                });
-              }),
-          Text(
-            "I accept all terms and conditions",
-            style: TextStyle(
-                fontWeight: FontWeight.w400,
-                fontSize: _large ? 12 : (_medium ? 11 : 10)),
-          ),
-        ],
-      ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: <Widget>[
+        Checkbox(
+            activeColor: Theme.of(context).buttonColor,
+            value: _checkBoxValue,
+            onChanged: (bool? newValue) {
+              setState(() {
+                _checkBoxValue = newValue;
+                _isButtonEnabled = newValue!;
+              });
+            }),
+        Text(
+          "I accept all terms and conditions",
+          style: TextStyle(
+              fontWeight: FontWeight.w400,
+              fontSize: _large ? 12 : (_medium ? 11 : 10)),
+        ),
+      ],
     );
   }
 
@@ -207,40 +206,25 @@ class _RegisterState extends State<Register> {
         child: const Text('Register'),
         onPressed: () async {
           if (_formKey.currentState!.validate()) {
-            setState(() {
-              _isLoading = true;
-            });
-            print(_name.text);
             try {
-              await _auth.createUserWithEmailAndPassword(
-                  email: _email.text, password: _password.text).then((user) {
-                    newUser = MyUser(
-                      id: _auth.currentUser!.uid,
-                      name: _name.text,
-                      totalBooks: 0,
-                    );
-                    FirebaseAuth.instance.currentUser!.updateDisplayName(_name.text);
-                    db.collection('users').doc(newUser.getId()).set({
-                      'name': newUser.getName(),
-                      'total_books': newUser.getTotalBooks(),
-                      // 'shelves':[],
-                    }, SetOptions(merge: true));
-                    setState(() {
-                      _isLoading = false;
-                    });
-                    Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(builder: (_) => HomeScreen()),
-                            (route) => false);
-                  });
-            } on FirebaseAuthException catch (e) {
-              setState(() {
-                _isLoading = false;
-              });
-              errorCode = e.code;
+              bool _isRegistered = await _auth.register(email: _email.text, password: _password.text);
+              if(_isRegistered){
+                _auth.getCurrentUser().updateDisplayName(_name.text);
+                _db.collection('users').doc(_auth.getUserId()).set({
+                  'name': _name.text,
+                  'total_books': 0,
+                }, SetOptions(merge: true));
+                Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HomeScreen2()),
+                        (route) => false);
+              }
+              // );
+            } on CustomException catch (e) {
               Fluttertoast.showToast(
-                  msg: getMessageFromErrorCode(),
-                  toastLength: Toast.LENGTH_LONG);
+                  msg: e.message.toString(),
+                  toastLength: Toast.LENGTH_LONG
+              );
             }
           }
         });
@@ -267,95 +251,22 @@ class _RegisterState extends State<Register> {
         ]),
         onPressed: () async {
           try {
-            setState(() {
-              _isLoading = true;
-            });
-            final GoogleSignInAccount? googleUser =
-                await GoogleSignIn().signIn();
-
-            // Obtain the auth details from the request
-            final GoogleSignInAuthentication? googleAuth =
-                await googleUser?.authentication;
-
-            // Create a new credential
-            final credential = GoogleAuthProvider.credential(
-              accessToken: googleAuth?.accessToken,
-              idToken: googleAuth?.idToken,
-            );
-            // Once signed in, return the UserCredential
-            await FirebaseAuth.instance.signInWithCredential(credential)
-                .then((value) {
-                  newUser = MyUser(
-                    id: _auth.currentUser!.uid,
-                    name: _auth.currentUser!.displayName.toString(),
-                    totalBooks: 0,
-                  );
-                  FirebaseAuth.instance.currentUser!.updateDisplayName(newUser.getName());
-                  db.collection('users').doc(newUser.getId()).set({
-                    'name': newUser.getName(),
-                    // 'total_books': newUser.getTotalBooks(),
-                    // 'shelves':[],
-                  }, SetOptions(merge: true));
-                  setState(() {
-                    _isLoading = false;
-                  });
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => HomeScreen()),
-                        (route) => false,
-                  );
-                });
-          } catch (e) {
-            setState(() {
-              _isLoading = false;
-            });
-            errorCode = e.toString();
+            bool signedIn = await _auth.googleSignIn();
+            if (signedIn) {
+              _auth.getCurrentUser().updateDisplayName(_auth.getUserName());
+              _db.collection('users').doc(_auth.getUserId()).set({
+                'name':_auth.getUserName(),
+              }, SetOptions(merge: true));
+              Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const HomeScreen2()),
+                      (route) => false);
+            }
+          } on CustomException catch (e) {
             Fluttertoast.showToast(
-              msg: getMessageFromErrorCode(),
-              toastLength: Toast.LENGTH_LONG,
-            );
+                msg: e.message.toString(), toastLength: Toast.LENGTH_LONG);
           }
         },
       ),
     );
-  }
-
-  String getMessageFromErrorCode() {
-    switch (errorCode) {
-      case "ERROR_EMAIL_ALREADY_IN_USE":
-      case "account-exists-with-different-credential":
-      case "email-already-in-use":
-        return "The account already exists for that email.";
-        break;
-      case "weak-password":
-        return "The password provided is too weak.";
-        break;
-      case "ERROR_WRONG_PASSWORD":
-      case "wrong-password":
-        return "Wrong email/password combination.";
-        break;
-      case "ERROR_USER_NOT_FOUND":
-      case "user-not-found":
-        return "No user found with this email.";
-        break;
-      case "ERROR_USER_DISABLED":
-      case "user-disabled":
-        return "User disabled.";
-        break;
-      case "ERROR_TOO_MANY_REQUESTS":
-      case "operation-not-allowed":
-        return "Too many requests to log into this account.";
-        break;
-      case "ERROR_OPERATION_NOT_ALLOWED":
-        return "Server error, please try again later.";
-        break;
-      case "ERROR_INVALID_EMAIL":
-      case "invalid-email":
-        return "Email address is invalid.";
-        break;
-      default:
-        return "Login failed. Please try again.";
-        break;
-    }
   }
 }

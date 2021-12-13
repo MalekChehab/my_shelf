@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_library/models/book.dart';
 
 class BookDetails extends StatefulWidget {
-  final Book book;
+  final Book? book;
 
   BookDetails({Key? key, required this.book}) : super(key: key);
 
@@ -35,19 +35,19 @@ class _BookDetailsState extends State<BookDetails> {
                     // fit: FlexFit.tight,
                     // flex: 3,
                     child: Hero(
-                      tag: "SelectedBook-${widget.book.id}",
+                      tag: "SelectedBook-${widget.book!.id}",
                       transitionOnUserGestures: true,
                       child: Padding(
                         padding: const EdgeInsets.only(right: 10.0),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
-                          child: widget.book.coverUrl == ""
+                          child: widget.book!.coverUrl == ""
                           ? const SizedBox(
                             child: Placeholder(),
                             height: 210,
                             width: 140,
                           ) : Image.network(
-                            widget.book.coverUrl.toString(),
+                            widget.book!.coverUrl.toString(),
                             height: 210,
                             width: 140,
                             fit: BoxFit.cover,
@@ -64,14 +64,14 @@ class _BookDetailsState extends State<BookDetails> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.book.title,
+                          widget.book!.title,
                           style: Theme.of(context).textTheme.bodyText1,
                         ),
-                        SizedBox(height: 20,),
-                        Text(widget.book.author.join(', ')),
-                        SizedBox(height: 20),
+                        const SizedBox(height: 20,),
+                        Text(widget.book!.author.join(', ')),
+                        const SizedBox(height: 20),
                         Text(
-                          widget.book.genre.toString(),
+                          widget.book!.genre.toString(),
                           // style: TextStyle(
                           //     color: Theme.of(context)
                           //         .textTheme

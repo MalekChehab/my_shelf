@@ -83,8 +83,7 @@ class _WishListScreenState extends State<WishListScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 40 ,right:10.0, left: 20),
                 child: Image.asset(
-                  'assets/images/home.png',
-                  // 'assets/images/wishlist.png',
+                  'assets/images/wishlist.png',
                   // height: 25.0,
                   // fit: BoxFit.scaleDown,
                 ),
@@ -125,9 +124,9 @@ class _WishListScreenState extends State<WishListScreen> {
                     onPressed: () {
                       Navigator.pushReplacement(
                           context, PageRouteBuilder(
-                        pageBuilder: (c, a1, a2) => HomeScreen(),
+                        pageBuilder: (c, a1, a2) => const HomeScreen2(),
                         transitionsBuilder: (c, anim, a2, child) => FadeTransition(opacity: anim, child: child),
-                        transitionDuration: Duration(milliseconds: 300),
+                        transitionDuration: const Duration(milliseconds: 300),
                       ),);
                     },
                   ),

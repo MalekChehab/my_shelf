@@ -347,7 +347,6 @@ class _AddBookState extends State<AddBook> {
       }
     );
   }
-  // late int totalBooks = 0;
   void uploadData(){
       if (_formKey.currentState!.validate()) {
         setState(() {
@@ -419,7 +418,7 @@ class _AddBookState extends State<AddBook> {
               ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
               Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  MaterialPageRoute(builder: (_) => const HomeScreen2()),
                       (route) => false
               );
             });
