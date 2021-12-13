@@ -418,7 +418,7 @@ class _AddBookState extends State<AddBook> {
               ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
               Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (_) => const HomeScreen2()),
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
                       (route) => false
               );
             });

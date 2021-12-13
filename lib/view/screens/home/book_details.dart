@@ -4,7 +4,7 @@ import 'package:my_library/models/book.dart';
 class BookDetails extends StatefulWidget {
   final Book? book;
 
-  BookDetails({Key? key, required this.book}) : super(key: key);
+  const BookDetails({Key? key, required this.book}) : super(key: key);
 
   @override
   _BookDetailsState createState() => _BookDetailsState();

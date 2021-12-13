@@ -216,7 +216,7 @@ class RegisterState extends ConsumerState<Register> {
                 }, SetOptions(merge: true));
                 Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (_) => const HomeScreen2()),
+                    MaterialPageRoute(builder: (_) => const HomeScreen()),
                         (route) => false);
               }
               // );
@@ -258,7 +258,7 @@ class RegisterState extends ConsumerState<Register> {
                 'name':_auth.getUserName(),
               }, SetOptions(merge: true));
               Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const HomeScreen2()),
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
                       (route) => false);
             }
           } on CustomException catch (e) {

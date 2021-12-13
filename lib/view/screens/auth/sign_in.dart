@@ -179,7 +179,7 @@ class SignInState extends ConsumerState<SignIn> {
             bool _signedIn = await _auth.signIn(email: _email.text, password: _password.text);
             if (_signedIn) {
               Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const HomeScreen2()),
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
                       (route) => false);
             }
           } on CustomException catch (e) {
@@ -220,7 +220,7 @@ class SignInState extends ConsumerState<SignIn> {
                 'name':_auth.getUserName(),
               }, SetOptions(merge: true));
               Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const HomeScreen2()),
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
                   (route) => false);
             }
           } on CustomException catch (e) {
