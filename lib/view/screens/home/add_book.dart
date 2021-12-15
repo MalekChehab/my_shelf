@@ -1,32 +1,27 @@
-// import 'dart:html';
 import 'dart:io';
-import 'dart:math';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:my_library/models/book.dart';
 import 'package:my_library/models/shelf.dart';
+import 'package:my_library/services/general_providers.dart';
 import 'package:my_library/view/screens/home/home_screen.dart';
 import 'package:my_library/view/screens/home/select_shelves_screen.dart';
 import 'package:my_library/view/widgets/book_text_form_field.dart';
 import 'package:flutter/material.dart';
 import 'package:my_library/Theme/responsive_ui.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_core/firebase_core.dart' as firebase_core;
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
-// import 'package:fluttertoast/fluttertoast.dart';
 
-class AddBook extends StatefulWidget {
-  late Shelf? shelf;
-  AddBook({Key? key, this.shelf}) : super(key: key);
+class AddBook extends ConsumerStatefulWidget {
+  final Shelf? shelf;
+  const AddBook({Key? key, this.shelf}) : super(key: key);
 
   @override
-  State<AddBook> createState() => _AddBookState();
+  AddBookState createState() => AddBookState();
 }
 
-class _AddBookState extends State<AddBook> {
+class AddBookState extends ConsumerState<AddBook> {
   late double _height;
   late double _width;
   late double _pixelRatio;
@@ -45,14 +40,11 @@ class _AddBookState extends State<AddBook> {
   final TextEditingController _location = TextEditingController();
   final TextEditingController _edition = TextEditingController();
   final TextEditingController _publishDate = TextEditingController();
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-  final db = FirebaseFirestore.instance;
   bool _imageTaken = false;
-  late File _imageFile;
+  late File _imageFile = File('no file');
   final picker = ImagePicker();
-  late List<Shelf> shelves = [];
-  String selectedValue = 'My Shelf';
   late bool _isLoading = false;
+  late var _db;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +53,7 @@ class _AddBookState extends State<AddBook> {
     _pixelRatio = MediaQuery.of(context).devicePixelRatio;
     _large = ResponsiveWidget.isScreenLarge(_width, _pixelRatio);
     _medium = ResponsiveWidget.isScreenMedium(_width, _pixelRatio);
-
+    _db = ref.watch(firebaseDatabaseProvider);
     return Material(
       child: Scaffold(
         appBar: AppBar(
@@ -73,7 +65,7 @@ class _AddBookState extends State<AddBook> {
           child: LoadingOverlay(
             isLoading: _isLoading,
             progressIndicator: CircularProgressIndicator(
-                color: Theme.of(context).indicatorColor,
+              color: Theme.of(context).indicatorColor,
             ),
             child: SingleChildScrollView(
               child: Column(
@@ -155,8 +147,9 @@ class _AddBookState extends State<AddBook> {
 
   Widget selectShelf() {
     return Button(
-      onPressed: (){
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SelectShelf()));
+      onPressed: () {
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => const SelectShelf()));
       },
       child: Container(
         alignment: Alignment.center,
@@ -168,15 +161,14 @@ class _AddBookState extends State<AddBook> {
         padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
-            Icon(
-                Icons.house_siding,
-                color: Theme.of(context).buttonColor),
+            Icon(Icons.house_siding, color: Theme.of(context).buttonColor),
             const SizedBox(width: 10),
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                widget.shelf != null ? widget.shelf!.getShelfName()
-                : 'Select Shelf',
+                widget.shelf != null
+                    ? widget.shelf!.getShelfName()
+                    : 'Select Shelf',
                 style: Theme.of(context).textTheme.subtitle2,
               ),
             ),
@@ -322,128 +314,82 @@ class _AddBookState extends State<AddBook> {
 
   Widget confirmButton(BuildContext context) {
     return Button(
-      child: Container(
-        alignment: Alignment.center,
-        height: _height / 13,
-        width: _large ? _width / 2 : (_medium ? _width / 3.75 : _width / 3.5),
-        decoration: const BoxDecoration(
-          borderRadius: BorderRadius.all(Radius.circular(20.0)),
+        child: Container(
+          alignment: Alignment.center,
+          height: _height / 13,
+          width: _large ? _width / 2 : (_medium ? _width / 3.75 : _width / 3.5),
+          decoration: const BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(20.0)),
+          ),
+          padding: const EdgeInsets.all(12.0),
+          child: Text(
+            'Add Book',
+            style: TextStyle(
+                fontSize: _large ? 18 : (_medium ? 12 : 10),
+                color: Theme.of(context).iconTheme.color),
+          ),
         ),
-        padding: const EdgeInsets.all(12.0),
-        child: Text(
-          'Add Book',
-          style: TextStyle(
-              fontSize: _large ? 18 : (_medium ? 12 : 10),
-              color: Theme.of(context).iconTheme.color),
-        ),
-      ),
-      color: Theme.of(context).primaryColor,
-      elevation: _large ? 12 : (_medium ? 10 : 8),
-      onPressed: () async {
-        widget.shelf == null ? Fluttertoast.showToast(
-          msg: 'Please select a shelf',
-          toastLength: Toast.LENGTH_LONG,
-        ) : uploadData();
-      }
-    );
+        color: Theme.of(context).primaryColor,
+        elevation: _large ? 12 : (_medium ? 10 : 8),
+        onPressed: () async {
+          widget.shelf == null
+              ? Fluttertoast.showToast(
+                  msg: 'Please select a shelf',
+                  toastLength: Toast.LENGTH_LONG,
+                )
+              : uploadData();
+        });
   }
-  void uploadData(){
-      if (_formKey.currentState!.validate()) {
-        setState(() {
-          _isLoading = true;
-        });
-        String fileName = '${_title.text}-${_author.text}.jpg';
-        db.collection('users').doc(uid).collection(widget.shelf!.getShelfName())
-            .add({
-          "title": _title.text,
-          "author": _author.text == "" ? ["Unknown"]:(_author.text).split(','),
-          "publisher": _publisher.text == "" ? "Unknown":_publisher.text,
-          "translator": _translator.text == "" ? "Unknown":_translator.text,
-          "genre": _genre.text == "" ? "Unknown":_genre.text,
-          "tags": _tags.text == "" ? ["Unknown"]:(_tags.text).split(','),
-          "ISBN": _isbn.text == "" ? "Unknown":_isbn.text,
-          "number_of_pages": _numberOfPages.text == "" ? "Unknown":_numberOfPages.text,
-          "date_added": DateTime.now().toString(),
-          "shelf":widget.shelf!.getShelfName(),
-          "description": "",
-          "location":_location.text == "" ? "Unknown": _location.text,
-          "is_finished": "",
-          "pages_read": "",
-          "is_reading": "",
-          "start_reading": "",
-          "end_reading": "",
-          "edition": _edition.text == "" ? "Unknown":_edition.text,
-          "edition_date": _publishDate.text == "" ? "Unknown":_publishDate.text,
-          "cover": "",
-        }).then((book) {
-          db.collection('users').doc(uid).collection(widget.shelf!.getShelfName()).doc('shelf_data').set({
-            'total_books': FieldValue.increment(1),
-            'shelf_name': widget.shelf!.getShelfName(),
-          }, SetOptions(merge: true));
-          uploadImageToFirebase(fileName, book.id);
-          db.collection('users').doc(uid).set({
-            "shelves": FieldValue.arrayUnion([widget.shelf!.getShelfName()]),
-            "authors": FieldValue.arrayUnion(_author.text.split(',')),
-            "tags": FieldValue.arrayUnion(_tags.text.split(',')),
-            "genre": FieldValue.arrayUnion([_genre.text]),
-            "publisher": FieldValue.arrayUnion([_publisher.text]),
-            "total_books": FieldValue.increment(1),
-          }, SetOptions(merge: true));
-          // Book newBook = Book(
-          //   id: book.id,
-          //   shelf: widget.shelf,
-          //   title: _title.text,
-          //   author: [_author.text],
-          //   genre: _genre.text,
-          //   dateAdded: DateTime.now().toString(),
-          // );
-          Future.delayed(const Duration(seconds: 3), (){
-            setState(() {
-              _isLoading = false;
-            });
-            ScaffoldMessenger.of(context).showMaterialBanner(
-                MaterialBanner(
-                  backgroundColor: Theme.of(context).buttonColor,
-                    content: Text('${_title.text} has been added to ${widget.shelf!.shelfName}'),
-                    actions: [
-                      TextButton(
-                        child: const Text('Dismiss'),
-                        onPressed: () => ScaffoldMessenger.of(context)
-                            .hideCurrentMaterialBanner(),
-                      ),
-                    ],
-                ),
-            );
-            Future.delayed(const Duration(seconds: 3), () {
-              ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
-              Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const HomeScreen()),
-                      (route) => false
-              );
-            });
-          });
-        });
-      }
-    }
 
-  Future uploadImageToFirebase(String fileName, String bookId) async {
-    try {
-      TaskSnapshot snapshot = await FirebaseStorage.instance
-          .ref('$uid/book_covers/$fileName')
-          .putFile(_imageFile);
-      if (snapshot.state == TaskState.success) {
-        final String downloadUrl = await snapshot.ref.getDownloadURL();
-        await db.collection('users').doc(uid)
-            .collection(widget.shelf!.getShelfName()).doc(bookId).set({
-          "cover": downloadUrl,
-        }, SetOptions(merge: true)).then((value) => print('success'));
-      } else {
-        print('Error from image repo ${snapshot.state.toString()}');
-        throw ('This file is not an image');
+  Future<void> uploadData() async {
+    Book book = Book(
+      shelf: widget.shelf,
+      title: _title.text,
+      author: _author.text == "" ? ["Unknown"] : (_author.text).split(','),
+      genre: _genre.text == "" ? "Unknown" : _genre.text,
+      tags: _tags.text == "" ? ["Unknown"] : (_tags.text).split(','),
+      publisher: _publisher.text == "" ? "Unknown" : _publisher.text,
+      translator: _translator.text == "" ? "Unknown" : _translator.text,
+      isbn: _isbn.text == "" ? "Unknown" : _isbn.text,
+      numberOfPages:
+          _numberOfPages.text == "" ? "Unknown" : _numberOfPages.text,
+      dateAdded: DateTime.now().toString(),
+      description: "",
+      location: _location.text == "" ? "Unknown" : _location.text,
+      isFinished: "",
+      isReading: "",
+      pagesRead: "",
+      startReading: "",
+      endReading: "",
+      edition: _edition.text == "" ? "Unknown" : _edition.text,
+      editionDate: _publishDate.text == "" ? "Unknown" : _publishDate.text,
+      coverUrl: "",
+    );
+    if (_formKey.currentState!.validate()) {
+      bool bookAdded = await _db.addBook(book, widget.shelf, _imageFile);
+      if (bookAdded) {
+        ScaffoldMessenger.of(context).showMaterialBanner(
+          MaterialBanner(
+            backgroundColor: Theme.of(context).buttonColor,
+            content: Text(
+                '${_title.text} has been added to ${widget.shelf!.shelfName}'),
+            actions: [
+              TextButton(
+                child: const Text('Dismiss'),
+                onPressed: () =>
+                    ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
+              ),
+            ],
+          ),
+        );
+        Future.delayed(const Duration(seconds: 3), () {
+          ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
+          Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+              (route) => false);
+        });
       }
-    } on firebase_core.FirebaseException catch (e) {
-      print(e);
     }
   }
 
@@ -454,7 +400,6 @@ class _AddBookState extends State<AddBook> {
       _imageFile = File(pickedFile!.path);
       _imageTaken = true;
     });
-
   }
 
   _imgFromGallery() async {
@@ -464,7 +409,6 @@ class _AddBookState extends State<AddBook> {
       _imageFile = File(pickedFile!.path);
       _imageTaken = true;
     });
-
   }
 
   // Future<Null> _cropImage() async {
@@ -517,12 +461,13 @@ class _AddBookState extends State<AddBook> {
         ),
         builder: (BuildContext bc) {
           return SizedBox(
-            height: _height/4,
+            height: _height / 4,
             child: SafeArea(
               child: Wrap(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top:19.0, left: 8, bottom: 8),
+                    padding:
+                        const EdgeInsets.only(top: 19.0, left: 8, bottom: 8),
                     child: ListTile(
                       leading: const Icon(Icons.photo_library_rounded),
                       title: const Text('Gallery'),
@@ -532,7 +477,7 @@ class _AddBookState extends State<AddBook> {
                       },
                     ),
                   ),
-                  SizedBox(height: _height/10),
+                  SizedBox(height: _height / 10),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: ListTile(

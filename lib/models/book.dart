@@ -22,33 +22,6 @@ class Book {
     this.pagesRead, this.startReading, this.endReading,
     this.edition, this.editionDate});
 
-  // factory Book.fromFirestore(DocumentSnapshot doc){
-  //   return Book(
-  //     id: doc.id,
-  //     shelf: Shelf(shelfName: doc.get('shelf')),
-  //     title: doc.get('title'),
-  //     author: doc.get('author'),
-  //     genre: doc.get('genre'),
-  //     tags: doc.get('tags'),
-  //     isbn: doc.get('ISBN'),
-  //     numberOfPages: doc.get('number_of_pages'),
-  //     publisher: doc.get('publisher'),
-  //     translator: doc.get('translator'),
-  //     edition: doc.get('edition'),
-  //     editionDate: doc.get('edition_date'),
-  //     location: doc.get('location'),
-  //     description: doc.get('description'),
-  //     pagesRead: doc.get('pages_read'),
-  //     isReading: doc.get('is_reading'),
-  //     isFinished: doc.get('is_finished'),
-  //     dateAdded: doc.get('date_added'),
-  //     startReading: doc.get('start_reading'),
-  //     endReading: doc.get('end_reading'),
-  //     coverUrl: doc.get('cover'),
-  //   );
-  //
-  // }
-
   factory Book.fromJson(Map<String, dynamic> json){
     return Book(
       title: json['title'] ?? '',
@@ -105,9 +78,9 @@ class Book {
     'cover': book.coverUrl,
   };
 
-  // void addTag(String tag){
-  //   tags!.add(tag);
-  // }
+  void addTag(String tag){
+    tags!.add(tag);
+  }
 
   Shelf? getShelf(){
     return shelf;
@@ -120,37 +93,11 @@ class Book {
   String? getGenre(){
     return genre;
   }
-  // List<dynamic>? getTags(){
-  //   return tags;
-  // }
+  List<dynamic>? getTags(){
+    return tags;
+  }
 
   String toString(){
     return (title);
   }
-
-  // Book _bookDataFromSnapshot(DocumentSnapshot snapshot){
-  //   return Book(
-  //       shelf: shelf,
-  //       title: title,
-  //       author: author,
-  //       genre: genre,
-  //       dateAdded: dateAdded
-  //   );
-  // }
-
-  // factory Book.fromDocument(DocumentSnapshot doc, Map docdata){
-  //   return Book(
-  //     id: doc.id,
-  //     title: docdata['title'],
-  //     author: docdata['author'],
-  //     publisher: docdata['publisher'],
-  //     genre: docdata['genre'],
-  //     tags: docdata['tags'],
-  //     location: docdata['location'],
-  //     numberOfPages: docdata['number_of_pages'],
-  //     timeStamp: docdata['timestamp'],
-  //     coverUrl: docdata['cover'],
-  //     description: docdata['description'],
-  //   );
-  // }
 }

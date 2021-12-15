@@ -27,8 +27,15 @@ final firebaseDatabaseProvider = Provider<FirebaseDatabase>((ref) {
   return FirebaseDatabase(uid: uid.toString());
 });
 
-final listProvider = StreamProvider.autoDispose<List<Book>>((ref) {
+final allBooksProvider = StreamProvider.autoDispose<List<Book>>((ref) {
   final db = ref.watch(firebaseDatabaseProvider);
   return db.getAllBooks().map((docs) =>
       docs.map((doc) => Book.fromFirestore(doc)).toList());
 });
+
+final shelvesProvider = StreamProvider.autoDispose<List<String>>((ref) {
+  final _shelvesList = ref.watch(firebaseDatabaseProvider).getShelves();
+  return _shelvesList;
+});
+
+

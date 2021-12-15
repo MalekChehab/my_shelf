@@ -97,7 +97,7 @@ class _WishListScreenState extends State<WishListScreen> {
           backgroundColor: Theme.of(context).iconTheme.color,
           onPressed: () {
             Navigator.push(
-                context, MaterialPageRoute(builder: (_) => AddBook()));
+                context, MaterialPageRoute(builder: (_) => const AddBook()));
           },
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

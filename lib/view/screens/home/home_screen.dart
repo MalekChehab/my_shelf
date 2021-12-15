@@ -77,10 +77,10 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class HomeScreenState extends ConsumerState<HomeScreen> {
   late bool _isLoading = false;
-  late AsyncValue<List<Book?>> book;
+  late AsyncValue<List<Book>> _booksList;
   @override
   Widget build(BuildContext context) {
-    book = ref.watch(listProvider);
+    _booksList = ref.watch(allBooksProvider);
     return Material(
       child: Scaffold(
         body: LoadingOverlay(
@@ -132,7 +132,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
               ];
             },
             body: Center(
-              child: book.when(
+              child: _booksList.when(
                     loading: () => CircularProgressIndicator(
                       color: Theme.of(context).indicatorColor,
                     ),
@@ -151,7 +151,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           backgroundColor: Theme.of(context).iconTheme.color,
           onPressed: () {
             Navigator.push(
-                context, MaterialPageRoute(builder: (_) => AddBook()));
+                context, MaterialPageRoute(builder: (_) => const AddBook()));
           },
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

@@ -1,32 +1,28 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:my_library/models/shelf.dart';
-import 'package:my_library/models/user.dart';
+import 'package:my_library/services/general_providers.dart';
 import 'package:my_library/view/screens/home/add_book.dart';
 import 'package:my_library/view/widgets/book_text_form_field.dart';
 import 'package:flutter/material.dart';
 import 'package:my_library/Theme/responsive_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-class SelectShelf extends StatefulWidget {
-  SelectShelf({Key? key}) : super(key: key);
+class SelectShelf extends ConsumerStatefulWidget {
+  const SelectShelf({Key? key}) : super(key: key);
 
   @override
-  State<SelectShelf> createState() => _SelectShelfState();
+  SelectShelfState createState() => SelectShelfState();
 }
 
-class _SelectShelfState extends State<SelectShelf> {
+class SelectShelfState extends ConsumerState<SelectShelf> {
   late double _height;
   late double _width;
   late double _pixelRatio;
   late bool _large;
   late bool _medium;
   final TextEditingController _newShelf = TextEditingController();
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-  late List<Shelf> _shelves = [];
-  CollectionReference usersCollection =
-      FirebaseFirestore.instance.collection('users');
+  late AsyncValue<List<String>> _shelvesList;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +31,7 @@ class _SelectShelfState extends State<SelectShelf> {
     _pixelRatio = MediaQuery.of(context).devicePixelRatio;
     _large = ResponsiveWidget.isScreenLarge(_width, _pixelRatio);
     _medium = ResponsiveWidget.isScreenMedium(_width, _pixelRatio);
-
+    _shelvesList = ref.watch(shelvesProvider);
     return Material(
       child: Scaffold(
         appBar: AppBar(
@@ -44,7 +40,7 @@ class _SelectShelfState extends State<SelectShelf> {
               Icons.arrow_back,
             ),
             onPressed: () => Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => AddBook())),
+                context, MaterialPageRoute(builder: (_) => const AddBook())),
           ),
           title: const Text('Select Shelf'),
         ),
@@ -52,93 +48,58 @@ class _SelectShelfState extends State<SelectShelf> {
           child: Column(
             children: [
               Flexible(
-                child: StreamBuilder<DocumentSnapshot>(
-                  //streambuilder listens to document which is each user
-                  stream: usersCollection.doc(uid).snapshots(),
-                  builder: (context, snapshot) {
-                    try {
-                      //if there is data
-                      if (snapshot.hasData) {
-                        //put the data of the field 'shelves' in a list
-                        List<dynamic> snapshots = snapshot.data!.get('shelves');
-                        //loop the list to add each element to a list of Shelf
-                        snapshots.forEach((element) {
-                          //check if the list _shelves has duplicate
-                          if (_shelves
-                              .where((shelf) =>
-                                  shelf.getShelfName() == element.toString())
-                              .isEmpty) {
-                            _shelves.add(Shelf(shelfName: element.toString()));
-                            //now we have a list of Shelf consists of the 'shelves' field in each document
-                          }
-                        });
-                        return _shelves.isEmpty
-                            ? Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                      bottom: 80, right: 10.0, left: 20),
-                                  child: Image.asset(
-                                    'assets/images/shelves.png',
-                                  ),
-                                ),
-                              )
-                            : ListView.builder(
-                                itemCount: _shelves.length,
-                                padding: const EdgeInsets.all(8.0),
-                                itemBuilder: (context, index) {
-                                  return Align(
-                                    alignment: Alignment.center,
-                                    child: Container(
-                                      width: _width / 1.5,
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Card(
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(30),
-                                        ),
-                                        color: Theme.of(context).primaryColor,
-                                        elevation: 4,
-                                        child: InkWell(
-                                          onTap: () {
-                                            Navigator.pushReplacement(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (_) => AddBook(
-                                                      shelf: _shelves[index])),
-                                            );
-                                          },
-                                          child: ListTile(
-                                              title: Center(
-                                                  child: Text(_shelves[index]
-                                                      .getShelfName()))),
+                child: _shelvesList.when(
+                  loading: () => CircularProgressIndicator(
+                    color: Theme.of(context).indicatorColor,
+                  ),
+                  error: (err, stack) => Center(child: Text('Error: $err')),
+                  data: (shelves) {
+                    return shelves.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.only(
+                                  bottom: 80, right: 10.0, left: 20),
+                              child: Image.asset(
+                                'assets/images/shelves.png',
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: shelves.length,
+                            padding: const EdgeInsets.all(8.0),
+                            itemBuilder: (context, index) {
+                              return Align(
+                                alignment: Alignment.center,
+                                child: Container(
+                                  width: _width / 1.5,
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Card(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    color: Theme.of(context).primaryColor,
+                                    elevation: 4,
+                                    child: InkWell(
+                                      onTap: () {
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (_) => AddBook(
+                                                  shelf: Shelf(shelfName: shelves[index]),
+                                              ),
+                                          ),
+                                        );
+                                      },
+                                      child: ListTile(
+                                        title: Center(
+                                          child: Text(shelves[index]),
                                         ),
                                       ),
                                     ),
-                                  );
-                                });
-                      } else if (snapshot.hasError) {
-                        return Text(snapshot.hasError.toString());
-                      } else {
-                        return const CircularProgressIndicator();
-                      }
-                    } catch (e) {
-                      if (e.toString() ==
-                          'Bad state: field does not exist within the DocumentSnapshotPlatform') {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                                bottom: 80, right: 10.0, left: 20),
-                            child: Image.asset(
-                              'assets/images/shelves.png',
-                            ),
-                          ),
-                        );
-                      } else {
-                        return Center(
-                          child: Text(e.toString()),
-                        );
-                      }
-                    }
+                                  ),
+                                ),
+                              );
+                            });
                   },
                 ),
               ),
