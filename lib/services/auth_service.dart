@@ -13,6 +13,14 @@ class AuthenticationService {
 
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 
+  bool userExist(){
+    try{
+      return _firebaseAuth.currentUser != null;
+    }on FirebaseAuthException catch (e) {
+      throw CustomException(message: e.message);
+    }
+  }
+
   User? getCurrentUser() {
     try {
       return _firebaseAuth.currentUser;

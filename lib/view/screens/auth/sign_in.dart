@@ -1,13 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:my_library/services/custom_exception.dart';
 import 'package:my_library/services/general_providers.dart';
 import 'package:my_library/view/screens/auth/reset_password.dart';
+import 'package:my_library/view/screens/auth/welcome_screen.dart';
 import 'package:my_library/view/widgets/book_text_form_field.dart';
 import 'package:my_library/Theme/responsive_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -35,7 +35,7 @@ class SignInState extends ConsumerState<SignIn> {
 
   @override
   Widget build(BuildContext context) {
-    _db = ref.watch(firebaseFirestoreProvider);
+    _db = ref.watch(firebaseDatabaseProvider);
     _auth = ref.watch(authServicesProvider);
     _height = MediaQuery.of(context).size.height;
     _width = MediaQuery.of(context).size.width;
@@ -44,6 +44,15 @@ class SignInState extends ConsumerState<SignIn> {
     _medium = ResponsiveWidget.isScreenMedium(_width, _pixelRatio);
     return Material(
       child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back,
+            ),
+            onPressed: () => Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const WelcomeScreen())),
+          ),
+        ),
         body: SizedBox(
           width: _width,
           height: _height,
@@ -56,7 +65,7 @@ class SignInState extends ConsumerState<SignIn> {
               child: Column(
                 children: [
                   SizedBox(
-                    height: _height / 7.0,
+                    height: _height / 20.0,
                   ),
                   Align(
                     alignment: Alignment.topLeft,
@@ -70,18 +79,18 @@ class SignInState extends ConsumerState<SignIn> {
                     ),
                   ),
                   SizedBox(
-                    height: _height / 15.0,
+                    height: _height / 40.0,
                   ),
                   form(context),
                   SizedBox(
-                    height: _height / 30.0,
+                    height: _height / 40.0,
                   ),
                   Padding(
                     padding: const EdgeInsets.all(10.0),
                     child: confirmButton(context),
                   ),
                   SizedBox(
-                    height: _height / 40.0,
+                    height: _height / 50.0,
                   ),
                   TextButton(
                     child: const Text('Forgot password?'),
@@ -174,17 +183,28 @@ class SignInState extends ConsumerState<SignIn> {
           ),
         ),
       onPressed: () async {
+          setState(() {
+            _isLoading = true;
+          });
         if (_formKey.currentState!.validate()) {
           try {
             bool _signedIn = await _auth.signIn(email: _email.text, password: _password.text);
             if (_signedIn) {
+              setState(() {
+                _isLoading = false;
+              });
               Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const HomeScreen()),
                       (route) => false);
             }
           } on CustomException catch (e) {
+            setState(() {
+              _isLoading = false;
+            });
             Fluttertoast.showToast(
-                msg: e.message.toString(), toastLength: Toast.LENGTH_LONG);
+                msg: e.message.toString(),
+                toastLength: Toast.LENGTH_LONG,
+            );
           }
         }
       },
@@ -212,18 +232,27 @@ class SignInState extends ConsumerState<SignIn> {
           ),
         ]),
         onPressed: () async {
+          setState(() {
+            _isLoading = true;
+          });
           try {
             bool _signedIn = await _auth.googleSignIn();
             if (_signedIn) {
-              _auth.getCurrentUser().updateDisplayName(_auth.getUserName());
-              _db.collection('users').doc(_auth.getUserId()).set({
-                'name':_auth.getUserName(),
-              }, SetOptions(merge: true));
-              Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const HomeScreen()),
-                  (route) => false);
+              Future.delayed(const Duration(seconds: 1), () {
+                _auth.getCurrentUser().updateDisplayName(_auth.getUserName());
+                _db.updateUser(_auth.getUserName());
+                setState(() {
+                  _isLoading = false;
+                });
+                Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                        (route) => false);
+              });
             }
           } on CustomException catch (e) {
+            setState(() {
+              _isLoading = false;
+            });
             Fluttertoast.showToast(
                 msg: e.message.toString(), toastLength: Toast.LENGTH_LONG);
           }

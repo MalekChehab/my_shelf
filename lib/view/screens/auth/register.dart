@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:my_library/services/custom_exception.dart';
 import 'package:my_library/services/general_providers.dart';
+import 'package:my_library/view/screens/auth/welcome_screen.dart';
 import 'package:my_library/view/widgets/book_text_form_field.dart';
 import 'package:my_library/Theme/responsive_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -37,7 +38,7 @@ class RegisterState extends ConsumerState<Register> {
   @override
   Widget build(BuildContext context) {
     _auth = ref.watch(authServicesProvider);
-    _db = ref.watch(firebaseFirestoreProvider);
+    _db = ref.watch(firebaseDatabaseProvider);
     _height = MediaQuery.of(context).size.height;
     _width = MediaQuery.of(context).size.width;
     _pixelRatio = MediaQuery.of(context).devicePixelRatio;
@@ -45,6 +46,15 @@ class RegisterState extends ConsumerState<Register> {
     _medium = ResponsiveWidget.isScreenMedium(_width, _pixelRatio);
     return Material(
       child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back,
+            ),
+            onPressed: () => Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const WelcomeScreen())),
+          ),
+        ),
         body: SizedBox(
           width: _width,
           height: _height,
@@ -57,7 +67,7 @@ class RegisterState extends ConsumerState<Register> {
               child: Column(
                 children: [
                   SizedBox(
-                    height: _height / 10.0,
+                    height: _height / 30.0,
                   ),
                   Align(
                     alignment: Alignment.topLeft,
@@ -71,7 +81,7 @@ class RegisterState extends ConsumerState<Register> {
                     ),
                   ),
                   SizedBox(
-                    height: _height / 30.0,
+                    height: _height / 50.0,
                   ),
                   form(context),
                 ],
@@ -111,11 +121,11 @@ class RegisterState extends ConsumerState<Register> {
               child: acceptTermsTextRow(),
             ),
             SizedBox(
-              height: _height / 50,
+              height: _height / 60,
             ),
             confirmButton(context),
             SizedBox(
-              height: _height / 50,
+              height: _height / 60,
             ),
             Divider(
               color: Theme.of(context).accentColor,
@@ -124,7 +134,7 @@ class RegisterState extends ConsumerState<Register> {
               indent: _width / 5,
             ),
             SizedBox(
-              height: _height / 50,
+              height: _height / 60,
             ),
             Center(
               child: googleSignUp(context),
@@ -162,7 +172,7 @@ class RegisterState extends ConsumerState<Register> {
       keyboardType: TextInputType.visiblePassword,
       icon: Icons.password_outlined,
       validator: (dynamic value) =>
-      value.length < 6 ? 'Must be 6 characters at least' : null,
+          value.length < 6 ? 'Must be 6 characters at least' : null,
     );
   }
 
@@ -173,7 +183,7 @@ class RegisterState extends ConsumerState<Register> {
       keyboardType: TextInputType.visiblePassword,
       icon: Icons.password,
       validator: (dynamic value) =>
-      value != _password.text ? 'Must be the same as the password' : null,
+          value != _password.text ? 'Must be the same as the password' : null,
     );
   }
 
@@ -205,26 +215,31 @@ class RegisterState extends ConsumerState<Register> {
         elevation: 10,
         child: const Text('Register'),
         onPressed: () async {
+          setState(() {
+            _isLoading = true;
+          });
           if (_formKey.currentState!.validate()) {
             try {
-              bool _isRegistered = await _auth.register(email: _email.text, password: _password.text);
-              if(_isRegistered){
+              bool _isRegistered = await _auth.register(
+                  email: _email.text, password: _password.text);
+              if (_isRegistered) {
                 _auth.getCurrentUser().updateDisplayName(_name.text);
-                _db.collection('users').doc(_auth.getUserId()).set({
-                  'name': _name.text,
-                  'total_books': 0,
-                }, SetOptions(merge: true));
+                // print(_auth.getUserName());
+                _db.updateUser(_name.text, _auth.getUserId().toString());
+                setState(() {
+                  _isLoading = false;
+                });
                 Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (_) => const HomeScreen()),
-                        (route) => false);
+                    (route) => false);
               }
-              // );
             } on CustomException catch (e) {
+              setState(() {
+                _isLoading = false;
+              });
               Fluttertoast.showToast(
-                  msg: e.message.toString(),
-                  toastLength: Toast.LENGTH_LONG
-              );
+                  msg: e.message.toString(), toastLength: Toast.LENGTH_LONG);
             }
           }
         });
@@ -250,18 +265,25 @@ class RegisterState extends ConsumerState<Register> {
           ),
         ]),
         onPressed: () async {
+          setState(() {
+            _isLoading = true;
+          });
           try {
-            bool signedIn = await _auth.googleSignIn();
-            if (signedIn) {
+            bool _signedIn = await _auth.googleSignIn();
+            if (_signedIn) {
               _auth.getCurrentUser().updateDisplayName(_auth.getUserName());
-              _db.collection('users').doc(_auth.getUserId()).set({
-                'name':_auth.getUserName(),
-              }, SetOptions(merge: true));
+              _db.updateUser(_auth.getUserName(), _auth.getUserId().toString());
+              setState(() {
+                _isLoading = false;
+              });
               Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const HomeScreen()),
-                      (route) => false);
+                  (route) => false);
             }
           } on CustomException catch (e) {
+            setState(() {
+              _isLoading = false;
+            });
             Fluttertoast.showToast(
                 msg: e.message.toString(), toastLength: Toast.LENGTH_LONG);
           }

@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:my_library/view/screens/auth/register.dart';
 import 'package:my_library/view/screens/auth/sign_in.dart';
 import 'package:my_library/view/widgets/book_text_form_field.dart';
 import 'package:my_library/Theme/responsive_ui.dart';
 
-class WelcomeScreen extends StatelessWidget {
-  WelcomeScreen({Key? key}) : super(key: key);
+class WelcomeScreen extends ConsumerStatefulWidget {
+  const WelcomeScreen({Key? key}) : super(key: key);
+
+  @override
+  WelcomeScreenState createState() => WelcomeScreenState();
+}
+
+class WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   late double _height;
+
   late double _width;
+
   late double _pixelRatio;
+
   late bool _large;
+
   late bool _medium;
 
   @override

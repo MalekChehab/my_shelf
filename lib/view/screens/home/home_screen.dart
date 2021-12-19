@@ -1,19 +1,13 @@
-import 'dart:ui';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:my_library/models/book.dart';
-import 'package:my_library/models/shelf.dart';
+import 'package:my_library/services/auth_service.dart';
 import 'package:my_library/services/general_providers.dart';
 import 'package:my_library/view/screens/auth/welcome_screen.dart';
 import 'package:my_library/view/screens/home/add_book.dart';
 import 'package:my_library/view/screens/home/wish_list_screen.dart';
 import 'package:my_library/view/widgets/book_list.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 // class BookSearch extends SearchDelegate<Book> {
 //   @override
@@ -76,10 +70,13 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class HomeScreenState extends ConsumerState<HomeScreen> {
-  late bool _isLoading = false;
+  late final bool _isLoading = false;
   late AsyncValue<List<Book>> _booksList;
+  late AuthenticationService _auth;
+
   @override
   Widget build(BuildContext context) {
+    _auth = ref.watch(authServicesProvider);
     _booksList = ref.watch(allBooksProvider);
     return Material(
       child: Scaffold(
@@ -103,22 +100,16 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                       tooltip: 'Settings',
                       icon: const Icon(Icons.settings_rounded),
                       onPressed: () async {
-                        setState(() {
-                          _isLoading = true;
-                        });
-                        Future.delayed(const Duration(seconds: 2), () async {
-                          await GoogleSignIn().signOut();
-                          await FirebaseAuth.instance.signOut().then((value) {
-                            setState(() {
-                              _isLoading = false;
-                            });
-                            Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => WelcomeScreen()),
-                                (route) => false);
-                          });
-                        });
+                        bool signedOut = await _auth.signOut();
+                        if (signedOut) {
+                          // Future.delayed(const Duration(seconds: 2), () async {
+                          Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const WelcomeScreen()),
+                              (route) => false);
+                          // });
+                        }
                       },
                     ),
                   ],
@@ -131,17 +122,41 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ];
             },
-            body: Center(
-              child: _booksList.when(
-                    loading: () => CircularProgressIndicator(
-                      color: Theme.of(context).indicatorColor,
+            body: Column(
+              children: [
+                // _booksList.value!.isNotEmpty ? Text(_auth.userExist() ? _auth.getUserName().toString() : '')
+                // : const SizedBox(),
+                Expanded(
+                  child: Center(
+                    child: _booksList.when(
+                      loading: () {
+                        return CircularProgressIndicator(
+                          color: Theme.of(context).indicatorColor,
+                        );
+                      },
+                      error: (err, stack) {
+                        return Center(child: Text('Error: $err'));
+                      },
+                      data: (books) {
+                        return Center(
+                          child: books.isEmpty
+                              ? Padding(
+                                  padding: const EdgeInsets.only(
+                                      bottom: 40,
+                                      right: 10.0,
+                                      left: 20
+                                  ),
+                                  child: Image.asset(
+                                    'assets/images/home.png',
+                                  ),
+                                )
+                              : BookList(books),
+                        );
+                      },
                     ),
-                    error: (err, stack) => Center(child: Text('Error: $err')),
-                    data: (books) {
-                      return
-                        Center(child: BookList(books));
-                    },
                   ),
+                ),
+              ],
             ),
           ),
         ),

@@ -23,7 +23,7 @@ class ResetPasswordState extends ConsumerState<ResetPassword> {
   late bool _large;
   late bool _medium;
   final TextEditingController _email = TextEditingController();
-  late final bool _isLoading = false;
+  late bool _isLoading = false;
   late var _auth;
 
   @override
@@ -148,16 +148,25 @@ class ResetPasswordState extends ConsumerState<ResetPassword> {
           ),
         ),
         onPressed: () async {
+          setState(() {
+            _isLoading = true;
+          });
           try {
             bool emailSent =
                 await _auth.sendPasswordResetEmail(email: _email.text);
             if (emailSent) {
+              setState(() {
+                _isLoading = false;
+              });
               Fluttertoast.showToast(
                 msg: 'An email has been sent to ${_email.text}',
                 toastLength: Toast.LENGTH_LONG,
               );
             }
           } on CustomException catch (e) {
+            setState((){
+              _isLoading = false;
+            });
             Fluttertoast.showToast(
               msg: e.message.toString(),
               toastLength: Toast.LENGTH_LONG,

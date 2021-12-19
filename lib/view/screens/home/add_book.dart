@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:my_library/models/book.dart';
 import 'package:my_library/models/shelf.dart';
+import 'package:my_library/services/custom_exception.dart';
 import 'package:my_library/services/general_providers.dart';
 import 'package:my_library/view/screens/home/home_screen.dart';
 import 'package:my_library/view/screens/home/select_shelves_screen.dart';
@@ -342,6 +343,9 @@ class AddBookState extends ConsumerState<AddBook> {
   }
 
   Future<void> uploadData() async {
+    setState(() {
+      _isLoading = true;
+    });
     Book book = Book(
       shelf: widget.shelf,
       title: _title.text,
@@ -366,29 +370,41 @@ class AddBookState extends ConsumerState<AddBook> {
       coverUrl: "",
     );
     if (_formKey.currentState!.validate()) {
-      bool bookAdded = await _db.addBook(book, widget.shelf, _imageFile);
-      if (bookAdded) {
-        ScaffoldMessenger.of(context).showMaterialBanner(
-          MaterialBanner(
-            backgroundColor: Theme.of(context).buttonColor,
-            content: Text(
-                '${_title.text} has been added to ${widget.shelf!.shelfName}'),
-            actions: [
-              TextButton(
-                child: const Text('Dismiss'),
-                onPressed: () =>
-                    ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
-              ),
-            ],
-          ),
+      try {
+        bool bookAdded = await _db.addBook(book, widget.shelf, _imageFile);
+        if (bookAdded) {
+          ScaffoldMessenger.of(context).showMaterialBanner(
+            MaterialBanner(
+              backgroundColor: Theme.of(context).buttonColor,
+              content: Text(
+                  '${_title.text} has been added to ${widget.shelf!.shelfName}'),
+              actions: [
+                TextButton(
+                  child: const Text('Dismiss'),
+                  onPressed: () =>
+                      ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
+                ),
+              ],
+            ),
+          );
+          Future.delayed(const Duration(seconds: 5), () {
+            setState(() {
+              _isLoading = false;
+            });
+            Future.delayed(const Duration(seconds: 3), () {
+              ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
+              Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  (route) => false);
+            });
+          });
+        }
+      } on CustomException catch (e) {
+        Fluttertoast.showToast(
+          msg: e.message.toString(),
+          toastLength: Toast.LENGTH_LONG,
         );
-        Future.delayed(const Duration(seconds: 3), () {
-          ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
-          Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-              (route) => false);
-        });
       }
     }
   }

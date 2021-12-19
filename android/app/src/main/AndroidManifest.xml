@@ -1,7 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.my_library">
+    package="dev.webzone.my_shelf">
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
    <application
-        android:label="my_shelf"
+        android:label="My Shelf"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
         <activity

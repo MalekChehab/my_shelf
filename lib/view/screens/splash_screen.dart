@@ -23,7 +23,7 @@ class SplashScreenState extends ConsumerState<SplashScreen> {
       Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) =>
-            _authState == null ? WelcomeScreen() : const HomeScreen()),
+            _authState == null ? const WelcomeScreen() : const HomeScreen()),
           );
     });
     return Scaffold(
