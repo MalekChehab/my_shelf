@@ -36,7 +36,7 @@ class SplashScreenState extends ConsumerState<SplashScreen> {
               padding: EdgeInsets.all(10.0),
               child: Text(
                 "from",
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: Colors.grey, fontSize: 15),
               ),
             ),
             Padding(

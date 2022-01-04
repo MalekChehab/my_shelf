@@ -135,7 +135,7 @@ class ResetPasswordState extends ConsumerState<ResetPassword> {
   }
 
   Widget confirmButton(BuildContext context) {
-    return Button(
+    return MyButton(
         elevation: 10,
         child: SizedBox(
           width: _width / 3,

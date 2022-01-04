@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
-
 import 'package:my_library/models/book.dart';
-import 'package:my_library/view/screens/home/add_book.dart';
 import 'package:my_library/view/screens/home/book_details.dart';
-// import 'package:book_library/src/models/notifiers/book_notifier.dart';
-// import 'package:book_library/src/widgets/book_cover.dart';
-// import 'package:book_library/src/widgets/star_rating.dart';
-// import 'package:book_library/src/screens/book/book_details.dart';
-// import 'package:book_library/src/style.dart';
 import 'package:transparent_image/transparent_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class BookItem extends StatelessWidget {
-  final Book? _book;
+  final Book _book;
 
   const BookItem(this._book, {Key? key}) : super(key: key);
 
@@ -40,17 +34,24 @@ class BookItem extends StatelessWidget {
               fit: FlexFit.tight,
               flex: 4,
               child: Hero(
-                tag: "SelectedBook-${_book!.id}",
+                tag: "SelectedBook-${_book.id}",
                 transitionOnUserGestures: true,
                 child: Padding(
                   padding: const EdgeInsets.only(right: 10.0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: _book!.coverUrl == "" ? const Placeholder()
-                        : FadeInImage.memoryNetwork(
-                      placeholder: kTransparentImage,
-                      image: _book!.coverUrl.toString(),
+                    child:
+                    _book.coverUrl == "" ? const Placeholder()
+                        :
+                    // FadeInImage.memoryNetwork(
+                    //   placeholder: kTransparentImage,
+                    //   image: _book!.coverUrl.toString(),
+                    //   fit: BoxFit.cover,
+                    // ),
+                    CachedNetworkImage(
+                      imageUrl: _book.coverUrl.toString(),
                       fit: BoxFit.cover,
+                      placeholder: (context, url) => Image.asset('assets/images/home.png'),
                     ),
                   ),
                 ),
@@ -78,13 +79,13 @@ class BookItem extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          _book!.title,
+                          _book.title,
                           style: Theme.of(context).textTheme.bodyText1,
                         ),
                         Padding(
                           padding: const EdgeInsets.only(top: 10.0),
                           child: Text(
-                            _book!.author.join(', '),
+                            _book.author.join(', '),
                             style: Theme.of(context).textTheme.caption,
                           ),
                         ),
@@ -95,7 +96,7 @@ class BookItem extends StatelessWidget {
                     //   rating: (_book.rating / 2).toDouble(),
                     // ),
                     Text(
-                      _book!.genre.toString(),
+                      _book.genre.toString(),
                       style: Theme.of(context).textTheme.subtitle1,
                     ),
                     Padding(
@@ -106,7 +107,7 @@ class BookItem extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(right: 8.0),
                               child: Text(
-                                _book!.shelf!.shelfName,
+                                _book.shelf!.shelfName,
                                 style: Theme.of(context).textTheme.caption,
                               ),
                             ),
@@ -116,7 +117,7 @@ class BookItem extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(left: 10.0),
                               child: Text(
-                                _book!.location.toString(),
+                                _book.location.toString(),
                                 style: TextStyle(
                                     color: Theme.of(context).hintColor,
                                 ),

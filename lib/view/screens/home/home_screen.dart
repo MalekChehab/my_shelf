@@ -166,7 +166,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           backgroundColor: Theme.of(context).iconTheme.color,
           onPressed: () {
             Navigator.push(
-                context, MaterialPageRoute(builder: (_) => const AddBook()));
+                context, MaterialPageRoute(builder: (_) => AddBook()));
           },
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

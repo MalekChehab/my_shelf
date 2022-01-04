@@ -40,7 +40,7 @@ class SelectShelfState extends ConsumerState<SelectShelf> {
               Icons.arrow_back,
             ),
             onPressed: () => Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const AddBook())),
+                context, MaterialPageRoute(builder: (_) => AddBook())),
           ),
           title: const Text('Select Shelf'),
         ),
@@ -121,7 +121,7 @@ class SelectShelfState extends ConsumerState<SelectShelf> {
                     backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                     title: const Text("Add a new shelf"),
                     content: SizedBox(
-                      height: _height / 5,
+                      height: _height / 4,
                       child: SingleChildScrollView(
                         child: Column(children: [
                           CustomTextFormField(
@@ -129,9 +129,19 @@ class SelectShelfState extends ConsumerState<SelectShelf> {
                             textEditingController: _newShelf,
                           ),
                           SizedBox(
-                            height: _height / 30,
+                            height: _height / 40,
                           ),
-                          Button(
+                          Text(
+                            "*Shelf name can't be changed later",
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context).hintColor
+                            ),
+                          ),
+                          SizedBox(
+                            height: _height / 40,
+                          ),
+                          MyButton(
                             child: const Padding(
                               padding: EdgeInsets.all(8.0),
                               child: Text('Add new shelf'),

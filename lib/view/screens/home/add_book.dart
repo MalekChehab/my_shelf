@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:loading_overlay/loading_overlay.dart';
@@ -6,6 +7,7 @@ import 'package:my_library/models/book.dart';
 import 'package:my_library/models/shelf.dart';
 import 'package:my_library/services/custom_exception.dart';
 import 'package:my_library/services/general_providers.dart';
+import 'package:my_library/view/screens/home/book_details.dart';
 import 'package:my_library/view/screens/home/home_screen.dart';
 import 'package:my_library/view/screens/home/select_shelves_screen.dart';
 import 'package:my_library/view/widgets/book_text_form_field.dart';
@@ -15,8 +17,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 
 class AddBook extends ConsumerStatefulWidget {
-  final Shelf? shelf;
-  const AddBook({Key? key, this.shelf}) : super(key: key);
+  late Shelf? shelf;
+  final Book? book;
+  AddBook({Key? key, this.shelf, this.book}) : super(key: key);
 
   @override
   AddBookState createState() => AddBookState();
@@ -29,23 +32,66 @@ class AddBookState extends ConsumerState<AddBook> {
   late bool _large;
   late bool _medium;
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _title = TextEditingController();
-  final TextEditingController _author = TextEditingController();
-  final TextEditingController _publisher = TextEditingController();
-  final TextEditingController _translator = TextEditingController();
-  final TextEditingController _genre = TextEditingController();
-  final TextEditingController _tags = TextEditingController();
-  final TextEditingController _isbn = TextEditingController();
-  final TextEditingController _numberOfPages = TextEditingController();
-  final TextEditingController _description = TextEditingController();
-  final TextEditingController _location = TextEditingController();
-  final TextEditingController _edition = TextEditingController();
-  final TextEditingController _publishDate = TextEditingController();
+  late TextEditingController _title;
+  late TextEditingController _author;
+  late TextEditingController _genre;
+  late TextEditingController _tags;
+  late TextEditingController _location;
+  late TextEditingController _translator;
+  late TextEditingController _publisher;
+  late TextEditingController _publishDate;
+  late TextEditingController _isbn;
+  late TextEditingController _numberOfPages;
+  late TextEditingController _language;
+  late TextEditingController _description;
+  late TextEditingController _edition;
+  late TextEditingController _editionDate;
   bool _imageTaken = false;
   late File _imageFile = File('no file');
   final picker = ImagePicker();
   late bool _isLoading = false;
   late var _db;
+  late Book newBook;
+
+  @override
+  void initState() {
+    _title = TextEditingController(
+        text: widget.book == null ? null : widget.book!.title);
+    _author = TextEditingController(
+        text: widget.book == null ? null : widget.book!.author.join(', '));
+    _genre = TextEditingController(
+        text: widget.book == null ? null : widget.book!.genre);
+    _location = TextEditingController(
+        text: widget.book == null ? null : widget.book!.location);
+    _tags = TextEditingController(
+        text: widget.book == null ? null : widget.book!.tags!.join(', '));
+    _translator = TextEditingController(
+        text: widget.book == null ? null : widget.book!.translator);
+    _publisher = TextEditingController(
+        text: widget.book == null ? null : widget.book!.publisher);
+    _publishDate = TextEditingController(
+        text: widget.book == null ? null : widget.book!.publishDate);
+    _isbn = TextEditingController(
+        text: widget.book == null ? null : widget.book!.isbn);
+    _numberOfPages = TextEditingController(
+        text: widget.book == null ? null : widget.book!.numberOfPages.toString());
+    _language = TextEditingController(
+        text: widget.book == null ? null : widget.book!.language);
+    _description = TextEditingController(
+        text: widget.book == null ? null : widget.book!.description);
+    _edition = TextEditingController(
+        text: widget.book == null ? null : widget.book!.edition);
+    _editionDate = TextEditingController(
+        text: widget.book == null ? null : widget.book!.editionDate);
+
+    if (widget.shelf == null && widget.book != null) {
+      widget.shelf = widget.book!.shelf;
+    }
+    // if(widget.book != null && widget.book!.coverUrl != ""){
+    //   _imageTaken = true;
+    // }
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +104,19 @@ class AddBookState extends ConsumerState<AddBook> {
     return Material(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Add Book'),
+          title: widget.book == null
+              ? const Text('Add Book')
+              : const Text('Edit Book'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back,),
+            onPressed: () => Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                    builder: (_) => widget.book == null ?
+                    const HomeScreen()
+                        : BookDetails(book: widget.book),
+                ),
+            ),
+          ),
         ),
         body: SizedBox(
           height: _height,
@@ -106,17 +164,23 @@ class AddBookState extends ConsumerState<AddBook> {
             SizedBox(height: _height / 60.0),
             genreTextFormField(),
             SizedBox(height: _height / 60.0),
+            numberOfPagesTextFormField(),
+            SizedBox(height: _height / 60.0),
             locationTextFormField(),
             SizedBox(height: _height / 60.0),
             tagsTextFormField(),
             SizedBox(height: _height / 60.0),
-            isbnTextFormField(),
+            translatorTextFormField(),
             SizedBox(height: _height / 60.0),
             publisherTextFormField(),
             SizedBox(height: _height / 60.0),
             publishDateTextFormField(),
             SizedBox(height: _height / 60.0),
-            translatorTextFormField(),
+            isbnTextFormField(),
+            SizedBox(height: _height / 60.0),
+            languageTextFormField(),
+            SizedBox(height: _height / 60.0),
+            descriptionTextFormField(),
             SizedBox(height: _height / 60.0),
             Row(
               children: [
@@ -133,7 +197,7 @@ class AddBookState extends ConsumerState<AddBook> {
                       children: [
                         editionTextFormField(),
                         SizedBox(height: _height / 60.0),
-                        numberOfPagesTextFormField(),
+                        editionDateTextFormField(),
                       ],
                     ),
                   ),
@@ -147,10 +211,12 @@ class AddBookState extends ConsumerState<AddBook> {
   }
 
   Widget selectShelf() {
-    return Button(
+    return MyButton(
       onPressed: () {
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (_) => const SelectShelf()));
+        widget.book == null
+            ? Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (_) => const SelectShelf()))
+            : null;
       },
       child: Container(
         alignment: Alignment.center,
@@ -167,9 +233,12 @@ class AddBookState extends ConsumerState<AddBook> {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
+                // widget.book == null ?
                 widget.shelf != null
                     ? widget.shelf!.getShelfName()
-                    : 'Select Shelf',
+                    : 'Select Shelf'
+                // : widget.book!.shelf!.getShelfName()
+                ,
                 style: Theme.of(context).textTheme.subtitle2,
               ),
             ),
@@ -192,38 +261,16 @@ class AddBookState extends ConsumerState<AddBook> {
       textEditingController: _title,
       icon: Icons.menu_book_rounded,
       validator: (dynamic value) => value.isEmpty ? 'Enter a title' : null,
+      capitalization: TextCapitalization.words,
     );
   }
 
   Widget authorTextFormField() {
     return CustomTextFormField(
-      hint: 'Author',
+      hint: 'Author (Separate by comma)',
       textEditingController: _author,
       icon: Icons.person_outline_rounded,
-    );
-  }
-
-  Widget publisherTextFormField() {
-    return CustomTextFormField(
-      hint: 'Publisher (optional)',
-      textEditingController: _publisher,
-      icon: Icons.book_online_rounded,
-    );
-  }
-
-  Widget translatorTextFormField() {
-    return CustomTextFormField(
-      hint: 'Translator (optional)',
-      textEditingController: _translator,
-      icon: Icons.translate_rounded,
-    );
-  }
-
-  Widget tagsTextFormField() {
-    return CustomTextFormField(
-      hint: 'Tags (optional)',
-      textEditingController: _tags,
-      icon: Icons.tag_rounded,
+      capitalization: TextCapitalization.words,
     );
   }
 
@@ -232,6 +279,61 @@ class AddBookState extends ConsumerState<AddBook> {
       hint: 'Genre',
       textEditingController: _genre,
       icon: Icons.category_outlined,
+      capitalization: TextCapitalization.words,
+    );
+  }
+
+  Widget numberOfPagesTextFormField() {
+    return CustomTextFormField(
+      hint: 'Number of Pages',
+      textEditingController: _numberOfPages,
+      keyboardType: TextInputType.number,
+      icon: Icons.collections_bookmark,
+    );
+  }
+
+  Widget locationTextFormField() {
+    return CustomTextFormField(
+      hint: 'Location (optional)',
+      textEditingController: _location,
+      icon: Icons.location_on_outlined,
+      capitalization: TextCapitalization.words,
+    );
+  }
+
+  Widget tagsTextFormField() {
+    return CustomTextFormField(
+      hint: 'Tags (Separate by comma)',
+      textEditingController: _tags,
+      icon: Icons.tag_rounded,
+      capitalization: TextCapitalization.words,
+    );
+  }
+
+  Widget translatorTextFormField() {
+    return CustomTextFormField(
+      hint: 'Translator (optional)',
+      textEditingController: _translator,
+      icon: Icons.translate_rounded,
+      capitalization: TextCapitalization.words,
+    );
+  }
+
+  Widget publisherTextFormField() {
+    return CustomTextFormField(
+      hint: 'Publisher (optional)',
+      textEditingController: _publisher,
+      icon: Icons.book_online_rounded,
+      capitalization: TextCapitalization.words,
+    );
+  }
+
+  Widget publishDateTextFormField() {
+    return CustomTextFormField(
+      hint: 'Publish Date (optional)',
+      textEditingController: _publishDate,
+      icon: Icons.calendar_today_rounded,
+      keyboardType: TextInputType.datetime,
     );
   }
 
@@ -244,6 +346,25 @@ class AddBookState extends ConsumerState<AddBook> {
     );
   }
 
+  Widget languageTextFormField() {
+    return CustomTextFormField(
+      hint: 'Language (optional)',
+      textEditingController: _language,
+      icon: Icons.language_rounded,
+      capitalization: TextCapitalization.words,
+    );
+  }
+
+  Widget descriptionTextFormField() {
+    return CustomTextFormField(
+      hint: 'Description (optional)',
+      textEditingController: _description,
+      icon: Icons.description,
+      capitalization: TextCapitalization.sentences,
+      keyboardType: TextInputType.multiline,
+    );
+  }
+
   Widget editionTextFormField() {
     return CustomTextFormField(
       hint: 'Edition',
@@ -253,68 +374,74 @@ class AddBookState extends ConsumerState<AddBook> {
     );
   }
 
-  Widget publishDateTextFormField() {
+  Widget editionDateTextFormField() {
     return CustomTextFormField(
-      hint: 'Publish Date (optional)',
-      textEditingController: _publishDate,
-      icon: Icons.book_rounded,
+      hint: 'Ed. Date',
+      textEditingController: _editionDate,
+      icon: Icons.calendar_today_rounded,
       keyboardType: TextInputType.datetime,
     );
   }
 
   Widget coverFormField(BuildContext context) {
     return _imageTaken
-        ? Container(
-            child: Image.file(_imageFile),
-            height:
-                _large ? _height / 5 : (_medium ? _height / 10 : _height / 7),
-            width:
-                _large ? _width / 2 : (_medium ? _width / 3.75 : _width / 3.5),
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.all(Radius.circular(20.0)),
-            ),
-          )
-        : Button(
+        ? GestureDetector(
             child: Container(
-              // alignment: Alignment.center,
               height:
                   _large ? _height / 5 : (_medium ? _height / 10 : _height / 7),
               width: _large
                   ? _width / 2
                   : (_medium ? _width / 3.75 : _width / 3.5),
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.all(Radius.circular(20.0)),
-              ),
-              child: Icon(
-                Icons.camera_alt_outlined,
-                color: Theme.of(context).iconTheme.color,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                image: DecorationImage(
+                  image: FileImage(_imageFile),
+                ),
               ),
             ),
-            color: Theme.of(context).backgroundColor,
-            elevation: _large ? 20 : (_medium ? 10 : 8),
-            onPressed: () => _showPicker(context),
-          );
-  }
-
-  Widget locationTextFormField() {
-    return CustomTextFormField(
-      hint: 'Location (optional)',
-      textEditingController: _location,
-      icon: Icons.location_on_outlined,
-    );
-  }
-
-  Widget numberOfPagesTextFormField() {
-    return CustomTextFormField(
-      hint: 'Pages',
-      textEditingController: _numberOfPages,
-      keyboardType: TextInputType.number,
-      icon: Icons.collections_bookmark,
-    );
+            onTap: () => _showPicker(context),
+          )
+        : widget.book != null && widget.book!.coverUrl.toString() != ""
+            ? GestureDetector(
+                child: Container(
+                  height: _large
+                      ? _height / 5
+                      : (_medium ? _height / 10 : _height / 7),
+                  width: _large
+                      ? _width / 2
+                      : (_medium ? _width / 3.75 : _width / 3.5),
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+                    image: DecorationImage(
+                        image: NetworkImage(widget.book!.coverUrl.toString())),
+                  ),
+                ),
+                onTap: () => _showPicker(context),
+              )
+            : MyButton(
+                child: Container(
+                  height: _large
+                      ? _height / 5
+                      : (_medium ? _height / 10 : _height / 7),
+                  width: _large
+                      ? _width / 2
+                      : (_medium ? _width / 3.75 : _width / 3.5),
+                  decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.all(Radius.circular(20.0)),
+                  ),
+                  child: Icon(
+                    Icons.camera_alt_outlined,
+                    color: Theme.of(context).iconTheme.color,
+                  ),
+                ),
+                color: Theme.of(context).backgroundColor,
+                elevation: _large ? 20 : (_medium ? 10 : 8),
+                onPressed: () => _showPicker(context),
+              );
   }
 
   Widget confirmButton(BuildContext context) {
-    return Button(
+    return MyButton(
         child: Container(
           alignment: Alignment.center,
           height: _height / 13,
@@ -324,7 +451,7 @@ class AddBookState extends ConsumerState<AddBook> {
           ),
           padding: const EdgeInsets.all(12.0),
           child: Text(
-            'Add Book',
+            widget.book == null ? 'Add Book' : 'Save',
             style: TextStyle(
                 fontSize: _large ? 18 : (_medium ? 12 : 10),
                 color: Theme.of(context).iconTheme.color),
@@ -346,65 +473,109 @@ class AddBookState extends ConsumerState<AddBook> {
     setState(() {
       _isLoading = true;
     });
-    Book book = Book(
+    newBook = Book(
       shelf: widget.shelf,
       title: _title.text,
-      author: _author.text == "" ? ["Unknown"] : (_author.text).split(','),
-      genre: _genre.text == "" ? "Unknown" : _genre.text,
-      tags: _tags.text == "" ? ["Unknown"] : (_tags.text).split(','),
-      publisher: _publisher.text == "" ? "Unknown" : _publisher.text,
-      translator: _translator.text == "" ? "Unknown" : _translator.text,
-      isbn: _isbn.text == "" ? "Unknown" : _isbn.text,
-      numberOfPages:
-          _numberOfPages.text == "" ? "Unknown" : _numberOfPages.text,
-      dateAdded: DateTime.now().toString(),
-      description: "",
-      location: _location.text == "" ? "Unknown" : _location.text,
-      isFinished: "",
-      isReading: "",
-      pagesRead: "",
-      startReading: "",
-      endReading: "",
-      edition: _edition.text == "" ? "Unknown" : _edition.text,
-      editionDate: _publishDate.text == "" ? "Unknown" : _publishDate.text,
+      author: _author.text == "" ? [""] : (_author.text).split(', '),
+      genre: _genre.text == "" ? "" : _genre.text,
+      numberOfPages: _numberOfPages.text == "" ? 0 : int.parse(_numberOfPages.text),
+      location: _location.text == "" ? "" : _location.text,
+      tags: _tags.text == "" ? [""] : (_tags.text).split(', '),
+      translator: _translator.text == "" ? "" : _translator.text,
+      publisher: _publisher.text == "" ? "" : _publisher.text,
+      publishDate: _publishDate.text == "" ? "" : _publishDate.text,
+      isbn: _isbn.text == "" ? "" : _isbn.text,
+      language: _language.text == "" ? "" : _language.text,
+      description: _description.text == "" ? "" : _description.text,
+      edition: _edition.text == "" ? "" : _edition.text,
+      editionDate: _editionDate.text == "" ? "" : _editionDate.text,
+      // startReading: ,
+      // endReading: ,
       coverUrl: "",
     );
     if (_formKey.currentState!.validate()) {
-      try {
-        bool bookAdded = await _db.addBook(book, widget.shelf, _imageFile);
-        if (bookAdded) {
-          ScaffoldMessenger.of(context).showMaterialBanner(
-            MaterialBanner(
-              backgroundColor: Theme.of(context).buttonColor,
-              content: Text(
-                  '${_title.text} has been added to ${widget.shelf!.shelfName}'),
-              actions: [
-                TextButton(
-                  child: const Text('Dismiss'),
-                  onPressed: () =>
-                      ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
-                ),
-              ],
-            ),
-          );
-          Future.delayed(const Duration(seconds: 5), () {
-            setState(() {
-              _isLoading = false;
+      if (widget.book == null) {
+        try {
+          bool bookAdded = await _db.addBook(newBook, widget.shelf, _imageFile);
+          if (bookAdded) {
+            ScaffoldMessenger.of(context).showMaterialBanner(
+              MaterialBanner(
+                backgroundColor: Theme.of(context).buttonColor,
+                content: Text(
+                    '${_title.text} has been added to ${widget.shelf!.shelfName}'),
+                actions: [
+                  TextButton(
+                    child: const Text('Dismiss'),
+                    onPressed: () => ScaffoldMessenger.of(context)
+                        .hideCurrentMaterialBanner(),
+                  ),
+                ],
+              ),
+            );
+            Future.delayed(const Duration(seconds: 5), () {
+              setState(() {
+                _isLoading = false;
+              });
+              Future.delayed(const Duration(seconds: 3), () {
+                ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
+                Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                    (route) => false);
+              });
             });
-            Future.delayed(const Duration(seconds: 3), () {
-              ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
-              Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const HomeScreen()),
-                  (route) => false);
-            });
+          }
+        } on CustomException catch (e) {
+          setState(() {
+            _isLoading = false;
           });
+          Fluttertoast.showToast(
+            msg: e.message.toString(),
+            toastLength: Toast.LENGTH_LONG,
+          );
         }
-      } on CustomException catch (e) {
-        Fluttertoast.showToast(
-          msg: e.message.toString(),
-          toastLength: Toast.LENGTH_LONG,
-        );
+      } else {
+        try {
+          newBook.id = widget.book!.id;
+          bool bookEdited =
+              await _db.editBook(newBook, widget.shelf, _imageFile);
+          if (bookEdited) {
+            ScaffoldMessenger.of(context).showMaterialBanner(
+              MaterialBanner(
+                backgroundColor: Theme.of(context).buttonColor,
+                content: Text('${_title.text} has been edited'),
+                actions: [
+                  TextButton(
+                    child: const Text('Dismiss'),
+                    onPressed: () => ScaffoldMessenger.of(context)
+                        .hideCurrentMaterialBanner(),
+                  ),
+                ],
+              ),
+            );
+            Future.delayed(const Duration(seconds: 5), () {
+              setState(() {
+                _isLoading = false;
+              });
+              Future.delayed(const Duration(seconds: 3), () {
+                ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => BookDetails(book: newBook)),
+                        // (route) => false
+                );
+              });
+            });
+          }
+        } on CustomException catch (e) {
+          setState(() {
+            _isLoading = false;
+          });
+          Fluttertoast.showToast(
+            msg: e.message.toString(),
+            toastLength: Toast.LENGTH_LONG,
+          );
+        }
       }
     }
   }
@@ -477,7 +648,7 @@ class AddBookState extends ConsumerState<AddBook> {
         ),
         builder: (BuildContext bc) {
           return SizedBox(
-            height: _height / 4,
+            // height: _height / 4,
             child: SafeArea(
               child: Wrap(
                 children: [

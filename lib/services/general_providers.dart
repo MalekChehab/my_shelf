@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:my_library/models/book.dart';
@@ -53,10 +52,10 @@ final shelvesProvider = StreamProvider.autoDispose<List<String>>((ref) {
   return controller.stream;
 });
 
-final shelvesExistProvider = StreamProvider<bool>((ref) {
+final shelvesExistProvider = StreamProvider.autoDispose<bool>((ref) {
   return ref.watch(firebaseDatabaseProvider).shelvesExist();
 });
 
-final booksExistProvider = StreamProvider<bool>((ref) {
+final booksExistProvider = StreamProvider.autoDispose<bool>((ref) {
   return ref.watch(firebaseDatabaseProvider).booksExist();
 });

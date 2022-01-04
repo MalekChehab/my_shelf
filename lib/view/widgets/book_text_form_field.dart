@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:my_library/Theme/responsive_ui.dart';
 
 class CustomTextFormField extends StatefulWidget {
-  final String hint;
+  final String? hint;
   final TextEditingController textEditingController;
   final TextInputType? keyboardType;
   final IconData? icon;
   final FormFieldValidator? validator;
+  final TextCapitalization? capitalization;
+  final Function(String)? onChanged;
 
   const CustomTextFormField(
-      {Key? key, required this.hint,
+      {Key? key, this.hint,
         required this.textEditingController,
-         this.keyboardType,
-         this.icon,
+        this.keyboardType,
+        this.icon,
         this.validator,
+        this.capitalization,
+        this.onChanged,
       }) : super(key: key);
 
   @override
@@ -37,6 +41,8 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       borderRadius: BorderRadius.circular(30.0),
       elevation: _large? 12 : (_medium? 10 : 8),
       child: TextFormField(
+        onChanged: widget.onChanged,
+        textCapitalization: widget.capitalization ?? TextCapitalization.none,
         style: Theme.of(context).textTheme.subtitle2,
         validator: widget.validator,
         controller: widget.textEditingController,
@@ -128,23 +134,25 @@ class _PasswordTextFieldState extends State<PasswordTextField> {
   }
 }
 
-class Button extends StatefulWidget{
+class MyButton extends StatefulWidget{
   final VoidCallback? onPressed;
   final Widget child;
   final Color? color;
   final double? elevation;
+  final ShapeBorder? shape;
 
-  const Button({Key? key,
+  const MyButton({Key? key,
     required this.onPressed,
     required this.child,
     this.color,
-    this.elevation,}) : super(key: key);
+    this.elevation,
+    this.shape,}) : super(key: key);
 
   @override
-  State<Button> createState() => _ButtonState();
+  State<MyButton> createState() => _MyButtonState();
 }
 
-class _ButtonState extends State<Button> {
+class _MyButtonState extends State<MyButton> {
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -152,9 +160,11 @@ class _ButtonState extends State<Button> {
         color: widget.color,
         child: widget.child,
         elevation: widget.elevation,
-        shape: RoundedRectangleBorder(
+        shape: widget.shape
+            ?? RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30.0),
-        ),
+        )
+        ,
         textColor: Theme.of(context).accentColor,
         padding: const EdgeInsets.all(2.0),
         onPressed: widget.onPressed,

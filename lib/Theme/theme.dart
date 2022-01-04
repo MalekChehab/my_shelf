@@ -89,6 +89,18 @@ class MyThemes {
         color: Colors.blue,
         fontWeight: FontWeight.w300,
       ),
+      headline6: TextStyle(
+        fontFamily: 'Nunito',
+        fontSize: 16,
+        color: Color(0xFF317CFF),
+        fontWeight: FontWeight.bold,
+      ),
+      bodyText2: TextStyle(
+        fontFamily: 'Nunito',
+        fontSize: 18,
+        color: Color(0xFFF6F6F6),
+        fontWeight: FontWeight.w400,
+      ),
       button: TextStyle(
         fontFamily: 'Nunito',
         fontSize: 15.0,

@@ -170,7 +170,7 @@ class SignInState extends ConsumerState<SignIn> {
   }
 
   Widget confirmButton(BuildContext context) {
-    return Button(
+    return MyButton(
         elevation: 10,
         child: SizedBox(
           width: _width / 3,
@@ -206,6 +206,10 @@ class SignInState extends ConsumerState<SignIn> {
                 toastLength: Toast.LENGTH_LONG,
             );
           }
+        }else{
+          setState(() {
+            _isLoading = false;
+          });
         }
       },
     );
@@ -215,7 +219,7 @@ class SignInState extends ConsumerState<SignIn> {
     return SizedBox(
       height: _height / 5,
       width: _width / 2,
-      child: Button(
+      child: MyButton(
         color: Theme.of(context).accentColor,
         child: Row(children: [
           Padding(

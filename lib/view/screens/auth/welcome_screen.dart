@@ -55,7 +55,7 @@ class WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   ),
                 ),
                 SizedBox(height: _height / 6),
-                Button(
+                MyButton(
                   color: Theme.of(context).textTheme.headline1!.color,
                   child: Container(
                     width: _width / 2,

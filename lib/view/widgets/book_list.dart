@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:my_library/models/book.dart';
-// import 'package:provider/provider.dart';
-// import 'package:book_library/src/models/notifiers/book_notifier.dart';
 import 'package:my_library/view/widgets/book_item.dart';
 
 class BookList extends StatelessWidget {
-  final List<Book?>? _books;
+  final List<Book> _books;
 
   const BookList(this._books, {Key? key}) : super(key: key);
 
@@ -22,9 +20,9 @@ class BookList extends StatelessWidget {
           ),
         );
       }),
-      itemCount: _books!.length,
+      itemCount: _books.length,
       itemBuilder: ((context, index) {
-        return BookItem(_books!.elementAt(index));
+        return BookItem(_books.elementAt(index));
       }),
     );
   }

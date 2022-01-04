@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -211,7 +210,7 @@ class RegisterState extends ConsumerState<Register> {
   }
 
   Widget confirmButton(BuildContext context) {
-    return Button(
+    return MyButton(
         elevation: 10,
         child: const Text('Register'),
         onPressed: () async {
@@ -241,6 +240,10 @@ class RegisterState extends ConsumerState<Register> {
               Fluttertoast.showToast(
                   msg: e.message.toString(), toastLength: Toast.LENGTH_LONG);
             }
+          }else{
+            setState(() {
+              _isLoading = false;
+            });
           }
         });
   }
@@ -248,7 +251,7 @@ class RegisterState extends ConsumerState<Register> {
   Widget googleSignUp(BuildContext context) {
     return SizedBox(
       width: _width / 2,
-      child: Button(
+      child: MyButton(
         color: Theme.of(context).accentColor,
         child: Row(children: [
           Padding(

@@ -34,6 +34,9 @@ class FirebaseDatabase{
     bool bookAdded = false;
     try {
       await _usersCollection.doc(uid).collection(shelf.shelfName).add(book.toFirebase()).then((doc) {
+        doc.set({
+          "date_added": FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
         _usersCollection.doc(uid).collection(shelf.getShelfName()).doc('shelf_data').set({
           'total_shelf_books': FieldValue.increment(1),
           'shelf_name': shelf.getShelfName(),
@@ -44,10 +47,11 @@ class FirebaseDatabase{
           "tags": FieldValue.arrayUnion(book.tags!.toList()),
           "genre": FieldValue.arrayUnion([book.genre]),
           "publisher": FieldValue.arrayUnion([book.publisher]),
+          "language": FieldValue.arrayUnion([book.language]),
           "total_books": FieldValue.increment(1),
         }, SetOptions(merge: true));
         if(_imageFile.path != 'no file'){
-          uploadImageToFirebase('${book.title}-${book.author}.jpg', doc.id, _imageFile, shelf);
+          uploadImageToFirebase('${book.id}.jpg', doc.id, _imageFile, shelf);
         }
         bookAdded = true;
       });
@@ -55,6 +59,29 @@ class FirebaseDatabase{
       throw CustomException(message: e.message);
     }
     return bookAdded;
+  }
+
+  Future<bool> editBook(Book newBook, Shelf shelf, File _imageFile) async {
+    bool bookEdited = false;
+    try {
+      await _usersCollection.doc(uid).collection(shelf.shelfName)
+          .doc(newBook.id.toString()).update(newBook.toFirebase()).then((value) {
+        _usersCollection.doc(uid).set({
+          "authors": FieldValue.arrayUnion(newBook.author),
+          "tags": FieldValue.arrayUnion(newBook.tags!.toList()),
+          "genre": FieldValue.arrayUnion([newBook.genre]),
+          "publisher": FieldValue.arrayUnion([newBook.publisher]),
+          "language": FieldValue.arrayUnion([newBook.language]),
+        }, SetOptions(merge: true));
+        if(_imageFile.path != 'no file'){
+          uploadImageToFirebase('${newBook.id}.jpg', newBook.id.toString(), _imageFile, shelf);
+        }
+        bookEdited = true;
+      });
+    } on FirebaseException catch (e){
+      throw CustomException(message: e.message);
+    }
+    return bookEdited;
   }
 
   Future uploadImageToFirebase(String fileName, String docId, File _imageFile, Shelf shelf) async {
@@ -110,7 +137,7 @@ class FirebaseDatabase{
     if(uid.isNotEmpty) {
       var snapshots = _usersCollection.doc(uid).snapshots();
       snapshots.forEach((snapshot) {
-        if (snapshot.data()!['total_books'] > 0 ) {
+        if (snapshot.data()!['total_books'] !=null && snapshot.data()!['total_books'] > 0 ) {
           _booksExistController.add(true);
         }
       });
@@ -161,5 +188,29 @@ class FirebaseDatabase{
       throw CustomException(message: e.message);
     }
     return _booksController.stream;
+  }
+
+  Future<bool> deleteBook(Book book) async {
+    bool bookDeleted = false;
+    try{
+      await _usersCollection.doc(uid).collection(book.shelf!.getShelfName()).doc(book.id).delete().then((value){
+        booksList.removeWhere((element) => element.id == book.id);
+        _booksController.add(booksList);
+        _usersCollection.doc(uid).collection(book.shelf!.getShelfName()).doc('shelf_data').set({
+          'total_shelf_books': FieldValue.increment(-1),
+        }, SetOptions(merge: true));
+        _usersCollection.doc(uid).set({
+          "total_books": FieldValue.increment(-1),
+        }, SetOptions(merge: true));
+        if(book.coverUrl != "") {
+          FirebaseStorage.instance.ref('$uid/book_covers/${book.id}.jpg')
+              .delete();
+        }
+        bookDeleted = true;
+      });
+    } on FirebaseException catch (e){
+      throw CustomException(message: e.message);
+    }
+    return bookDeleted;
   }
 }
