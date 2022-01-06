@@ -22,19 +22,9 @@ class Book {
     this.dateAdded, this.location, this.isReading,
     this.coverUrl, this.description, this.isFinished, this.isbn,
     this.pagesRead, this.startReading, this.endReading, this.rating,
-    this.edition, this.editionDate, this.language, this.publishDate})
-  {
-    pagesRead = 0;
-    rating = 0.0;
-    isReading = false;
-    isFinished = false;
-    timesRead = 0;
-    startReading = DateTime(1000,1,1);
-    endReading = DateTime(1000, 1,1);
-  }
+    this.edition, this.editionDate, this.language, this.publishDate});
 
   factory Book.fromJson(Map<String, dynamic> json){
-    print(json['date_added'].runtimeType);
     return Book(
       shelf: Shelf(shelfName: json['shelf'] ?? ''),
       title: json['title'] ?? '',

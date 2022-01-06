@@ -12,6 +12,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart' as intl;
 import 'add_book.dart';
 import 'home_screen.dart';
+import 'dart:io';
 
 class BookDetails extends ConsumerStatefulWidget {
   final Book? book;
@@ -29,7 +30,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
   late TabController tabController;
   late var _db;
   late bool _isLoading = false;
-  // DateTime selectedDate = DateTime.now();
+  late File file = File('no file');
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +47,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
         child: DefaultTabController(
           length: 2,
           child: NestedScrollView(
+            // scrollBehavior: const ScrollBehavior(androidOverscrollIndicator: AndroidOverscrollIndicator.stretch),
             headerSliverBuilder:
                 (BuildContext context, bool innerBoxIsScrolled) {
               return <Widget>[
@@ -454,10 +456,31 @@ class BookDetailsState extends ConsumerState<BookDetails>
                   child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        // started reading
+                        // date added
                         Padding(
                           padding: const EdgeInsets.only(
-                              top: 10, left: 8.0, bottom: 8),
+                            left: 8,
+                            top: 14,
+                          ),
+                          child: ListTile(
+                            leading: Padding(
+                              padding: const EdgeInsets.only(top: 6.0),
+                              child: Text(
+                                'Date Added',
+                                style: Theme.of(context).textTheme.headline6,
+                              ),
+                            ),
+                            title: Text(
+                              '${intl.DateFormat('dd MMM yyyy').format(widget.book!.dateAdded!)}'
+                              ' at ${intl.DateFormat('jm').format(widget.book!.dateAdded!)}',
+                              style: Theme.of(context).textTheme.bodyText2,
+                            ),
+                          ),
+                        ),
+
+                        // started reading
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8.0, bottom: 14),
                           child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -470,7 +493,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                         Theme.of(context).textTheme.headline6,
                                   ),
                                 ),
-                                SizedBox(width: _width / 35),
+                                SizedBox(width: _width / 45),
                                 MyButton(
                                   child: Icon(
                                     Icons.check,
@@ -485,10 +508,12 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                   elevation: 6,
                                   onPressed: () {
                                     if (widget.book!.isReading == true) {
-                                      _showBottomSheet(context, false);
+                                      _checkBottomSheet(context, false);
                                     } else {
                                       setState(() {
                                         widget.book!.isReading = true;
+                                        widget.book!.startReading =
+                                            DateTime.now();
                                       });
                                     }
                                   },
@@ -497,7 +522,8 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                 Padding(
                                   padding: const EdgeInsets.all(12.0),
                                   child: GestureDetector(
-                                    child: widget.book!.startReading == DateTime(1000,1,1)
+                                    child: widget.book!.startReading ==
+                                            DateTime(1000, 1, 1)
                                         ? const Icon(
                                             Icons.calendar_today_rounded)
                                         : Column(
@@ -506,7 +532,8 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                                 alignment: Alignment.centerLeft,
                                                 child: Text(
                                                   intl.DateFormat('dd-MM')
-                                                      .format(widget.book!.startReading!),
+                                                      .format(widget
+                                                          .book!.startReading!),
                                                   style: TextStyle(
                                                     fontSize: 11,
                                                     color: Theme.of(context)
@@ -516,8 +543,8 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                                 ),
                                               ),
                                               Text(
-                                                intl.DateFormat('yyyy')
-                                                    .format(widget.book!.startReading!),
+                                                intl.DateFormat('yyyy').format(
+                                                    widget.book!.startReading!),
                                                 style: TextStyle(
                                                   fontSize: 11,
                                                   color: Theme.of(context)
@@ -527,27 +554,22 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                               ),
                                             ],
                                           ),
-                                    onTap: () async{
-                                      DateTime? datePicked = await showDatePicker(
-                                        context: context,
-                                        initialDate: widget.book!.startReading == DateTime(1000,1,1)
-                                            ? DateTime.now() : widget.book!.startReading!,
-                                        firstDate: DateTime(1900),
-                                        lastDate: DateTime(2200),
-                                      );
-                                      if(datePicked != null && datePicked != widget.book!.startReading){
-                                        setState((){
-                                          widget.book!.startReading = datePicked;
-                                        });
+                                    onTap: () async {
+                                      if (widget.book!.startReading ==
+                                          DateTime(1000, 1, 1)) {
+                                        _pickStartedDate();
+                                      } else {
+                                        _dateBottomSheet(context, false);
                                       }
                                     },
                                   ),
                                 ),
                               ]),
                         ),
+
                         // finished reading
                         Padding(
-                          padding: const EdgeInsets.only(left: 8.0, bottom: 8),
+                          padding: const EdgeInsets.only(left: 8.0, bottom: 14),
                           child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -584,7 +606,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                   elevation: 6,
                                   onPressed: () {
                                     if (widget.book!.isFinished == true) {
-                                      _showBottomSheet(context, true);
+                                      _checkBottomSheet(context, true);
                                     } else {
                                       setState(() {
                                         widget.book!.isFinished = true;
@@ -592,22 +614,64 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                         widget.book!.isReading = true;
                                         widget.book!.pagesRead =
                                             widget.book!.numberOfPages;
+                                        widget.book!.endReading =
+                                            DateTime.now();
                                       });
                                     }
                                   },
                                 ),
-                                SizedBox(width: _width / 10),
-                                const Padding(
-                                  padding: EdgeInsets.all(12.0),
-                                  child: Icon(Icons.calendar_today_rounded),
+                                SizedBox(width: _width / 11),
+                                Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: GestureDetector(
+                                    child: widget.book!.endReading ==
+                                            DateTime(1000, 1, 1)
+                                        ? const Icon(
+                                            Icons.calendar_today_rounded)
+                                        : Column(
+                                            children: [
+                                              Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                  intl.DateFormat('dd-MM')
+                                                      .format(widget
+                                                          .book!.endReading!),
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: Theme.of(context)
+                                                        .iconTheme
+                                                        .color,
+                                                  ),
+                                                ),
+                                              ),
+                                              Text(
+                                                intl.DateFormat('yyyy').format(
+                                                    widget.book!.endReading!),
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Theme.of(context)
+                                                      .iconTheme
+                                                      .color,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                    onTap: () async {
+                                      if (widget.book!.endReading ==
+                                          DateTime(1000, 1, 1)) {
+                                        _pickFinishedDate();
+                                      } else {
+                                        _dateBottomSheet(context, true);
+                                      }
+                                    },
+                                  ),
                                 ),
-                                // onPressed: () {},
-                                // ),
                               ]),
                         ),
+
                         // pages read
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(8.0, 8, 8, 0),
+                          padding: const EdgeInsets.fromLTRB(8, 14, 8, 0),
                           child: ListTile(
                             title: Text(
                               "Pages Read",
@@ -626,7 +690,12 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                         });
                                       }
                                     },
-                                    icon: const Icon(Icons.remove_rounded),
+                                    icon: Icon(
+                                      Icons.remove_rounded,
+                                      color: Theme.of(context)
+                                          .accentColor
+                                          .withOpacity(.8),
+                                    ),
                                   ),
                                   Expanded(
                                     child: SliderTheme(
@@ -676,16 +745,22 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                         });
                                       }
                                     },
-                                    icon: const Icon(Icons.add_rounded),
+                                    icon: Icon(
+                                      Icons.add_rounded,
+                                      color: Theme.of(context)
+                                          .accentColor
+                                          .withOpacity(.8),
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                           ),
                         ),
+
                         // rate
                         Padding(
-                          padding: const EdgeInsets.only(left: 8.0),
+                          padding: const EdgeInsets.only(left: 8.0, bottom: 14),
                           child: ListTile(
                             title: Text('Rate',
                                 style: Theme.of(context).textTheme.headline6),
@@ -718,7 +793,59 @@ class BookDetailsState extends ConsumerState<BookDetails>
                             ),
                           ),
                         ),
-                        Text(widget.book!.dateAdded.toString()),
+
+                        // notes
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ListTile(
+                            title: Text('Notes',
+                                style: Theme.of(context).textTheme.headline6),
+                            subtitle: TextField(),
+                          ),
+                        ),
+
+                        SizedBox(height: _height / 20),
+
+                        // save button
+                        SizedBox(
+                          height: 50,
+                          // width: double.infinity,
+                          width: 130,
+                          child: ElevatedButton(
+                            style: ButtonStyle(
+                              foregroundColor: MaterialStateProperty.all<Color>(
+                                  Theme.of(context).indicatorColor),
+                              backgroundColor: MaterialStateProperty.all<Color>(
+                                  Theme.of(context).buttonColor),
+                            ),
+                            child: const Text('Save'),
+                            onPressed: () async {
+                              try {
+                                setState(() {
+                                  _isLoading = true;
+                                });
+                                bool bookEdited = await _db.editBook(
+                                    widget.book, widget.book!.shelf, file);
+                                if (bookEdited) {
+                                  Future.delayed(const Duration(seconds: 3),
+                                      () {
+                                    setState(() {
+                                      _isLoading = false;
+                                    });
+                                  });
+                                }
+                              } on CustomException catch (e) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                                Fluttertoast.showToast(
+                                  msg: e.message.toString(),
+                                  toastLength: Toast.LENGTH_LONG,
+                                );
+                              }
+                            },
+                          ),
+                        ),
                       ]),
                 ),
               ],
@@ -729,26 +856,49 @@ class BookDetailsState extends ConsumerState<BookDetails>
     );
   }
 
-  // _selectDate(BuildContext context) async {
-  //   final DateTime? picked = await showDatePicker(
-  //     context: context,
-  //     initialDate: selectedDate, // Refer step 1
-  //     firstDate: DateTime(2000),
-  //     lastDate: DateTime(2025),
-  //   );
-  //   if (picked != null && picked != selectedDate) {
-  //     setState(() {
-  //       selectedDate = picked;
-  //     });
-  //   }
-  //   else{
-  //     setState((){
-  //       // widget.book!.startReading = selectedDate;
-  //     });
-  //   }
-  // }
+  void _pickStartedDate() async {
+    DateTime? datePicked = await showDatePicker(
+      context: context,
+      initialDate: widget.book!.startReading == DateTime(1000, 1, 1) &&
+              widget.book!.endReading == DateTime(1000, 1, 1)
+          ? DateTime.now()
+          : widget.book!.startReading == DateTime(1000, 1, 1)
+              ? widget.book!.endReading!
+              : widget.book!.startReading!,
+      firstDate: DateTime(1950),
+      lastDate: widget.book!.endReading == DateTime(1000, 1, 1)
+          ? DateTime.now()
+          : widget.book!.endReading!,
+    );
+    if (datePicked != null && datePicked != widget.book!.startReading) {
+      setState(() {
+        widget.book!.startReading = datePicked;
+        widget.book!.isReading = true;
+      });
+    }
+  }
 
-  void _showBottomSheet(BuildContext context, bool finishedReading) {
+  void _pickFinishedDate() async {
+    DateTime? datePicked = await showDatePicker(
+      context: context,
+      initialDate: widget.book!.endReading == DateTime(1000, 1, 1)
+          ? DateTime.now()
+          : widget.book!.endReading!,
+      firstDate: widget.book!.startReading == DateTime(1000, 1, 1)
+          ? DateTime(1950)
+          : widget.book!.startReading!,
+      lastDate: DateTime.now(),
+    );
+    if (datePicked != null && datePicked != widget.book!.endReading) {
+      setState(() {
+        widget.book!.endReading = datePicked;
+        widget.book!.isFinished = true;
+        widget.book!.pagesRead = widget.book!.numberOfPages;
+      });
+    }
+  }
+
+  void _checkBottomSheet(BuildContext context, bool finishedReading) {
     showModalBottomSheet(
         context: context,
         backgroundColor: Theme.of(context).backgroundColor,
@@ -774,8 +924,10 @@ class BookDetailsState extends ConsumerState<BookDetails>
                           if (!finishedReading) {
                             widget.book!.isReading = false;
                             widget.book!.pagesRead = 0;
+                            widget.book!.startReading = DateTime(1000, 1, 1);
                           }
                           widget.book!.isFinished = false;
+                          widget.book!.endReading = DateTime(1000, 1, 1);
                           widget.book!.timesRead = 0;
                         });
                         Navigator.pop(context);
@@ -814,6 +966,62 @@ class BookDetailsState extends ConsumerState<BookDetails>
                           ),
                         )
                       : const SizedBox(),
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  void _dateBottomSheet(BuildContext context, bool finishedReading) {
+    showModalBottomSheet(
+        context: context,
+        backgroundColor: Theme.of(context).backgroundColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        builder: (BuildContext bc) {
+          return SizedBox(
+            child: SafeArea(
+              child: Wrap(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ListTile(
+                      leading: const Icon(Icons.edit_rounded),
+                      title: const Text('Change Date'),
+                      onTap: () {
+                        Navigator.pop(context);
+                        if (finishedReading) {
+                          _pickFinishedDate();
+                        } else {
+                          _pickStartedDate();
+                        }
+                      },
+                    ),
+                  ),
+                  SizedBox(height: _height / 10),
+                  Padding(
+                    padding:
+                        const EdgeInsets.only(top: 19.0, left: 8, bottom: 8),
+                    child: ListTile(
+                      leading: const Icon(Icons.remove_circle_outline_rounded),
+                      title: const Text('Remove Date'),
+                      onTap: () {
+                        setState(() {
+                          if (!finishedReading) {
+                            widget.book!.startReading = DateTime(1000, 1, 1);
+                          } else {
+                            widget.book!.endReading = DateTime(1000, 1, 1);
+                          }
+                        });
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),

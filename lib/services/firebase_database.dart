@@ -36,6 +36,13 @@ class FirebaseDatabase{
       await _usersCollection.doc(uid).collection(shelf.shelfName).add(book.toFirebase()).then((doc) {
         doc.set({
           "date_added": FieldValue.serverTimestamp(),
+          "pages_read": 0,
+          "rating": 0.0,
+          "is_reading": false,
+          "is_finished": false,
+          "times_read": 0,
+          "start_reading": DateTime(1000,1,1),
+          "end_reading": DateTime(1000, 1,1),
         }, SetOptions(merge: true));
         _usersCollection.doc(uid).collection(shelf.getShelfName()).doc('shelf_data').set({
           'total_shelf_books': FieldValue.increment(1),
@@ -213,4 +220,62 @@ class FirebaseDatabase{
     }
     return bookDeleted;
   }
+
+  // Future<bool> addBook2(Book book, File _imageFile) async {
+  //   bool bookAdded = false;
+  //   try {
+  //     await _usersCollection.doc(uid).collection('books').add(book.toFirebase()).then((doc) {
+  //       doc.set({
+  //         "date_added": FieldValue.serverTimestamp(),
+  //         "pages_read": 0,
+  //         "rating": 0.0,
+  //         "is_reading": false,
+  //         "is_finished": false,
+  //         "times_read": 0,
+  //         "start_reading": DateTime(1000,1,1),
+  //         "end_reading": DateTime(1000, 1,1),
+  //       }, SetOptions(merge: true));
+  //       // _usersCollection.doc(uid).collection(shelf.getShelfName()).doc('shelf_data').set({
+  //       //   'total_shelf_books': FieldValue.increment(1),
+  //       //   'shelf_name': book.shelf!.getShelfName(),
+  //       // }, SetOptions(merge: true));
+  //       _usersCollection.doc(uid).set({
+  //         "shelves2": FieldValue.arrayUnion([{book.shelf!.getShelfName() : FieldValue.increment(1)}]),
+  //         "authors": FieldValue.arrayUnion(book.author),
+  //         "tags": FieldValue.arrayUnion(book.tags!.toList()),
+  //         "genre": FieldValue.arrayUnion([book.genre]),
+  //         "publisher": FieldValue.arrayUnion([book.publisher]),
+  //         "language": FieldValue.arrayUnion([book.language]),
+  //         "total_books": FieldValue.increment(1),
+  //       }, SetOptions(merge: true));
+  //       if(_imageFile.path != 'no file'){
+  //         uploadImageToFirebase2('${book.id}.jpg', doc.id, _imageFile);
+  //       }
+  //       bookAdded = true;
+  //     });
+  //   } on FirebaseException catch (e){
+  //     throw CustomException(message: e.message);
+  //   }
+  //   return bookAdded;
+  // }
+
+  // Future uploadImageToFirebase2(String fileName, String docId, File _imageFile) async {
+  //   try {
+  //     TaskSnapshot snapshot = await FirebaseStorage.instance
+  //         .ref('$uid/book_covers/$fileName')
+  //         .putFile(_imageFile);
+  //     if (snapshot.state == TaskState.success) {
+  //       final String downloadUrl = await snapshot.ref.getDownloadURL();
+  //       await _usersCollection.doc(uid)
+  //           .collection('books').doc(docId).set({
+  //         "cover": downloadUrl,
+  //       }, SetOptions(merge: true));
+  //     } else {
+  //       // print('Error from image repo ${snapshot.state.toString()}');
+  //       throw ('This file is not an image');
+  //     }
+  //   } on FirebaseException catch (e) {
+  //     throw CustomException(message: e.message);
+  //   }
+  // }
 }

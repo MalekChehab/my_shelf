@@ -5,7 +5,7 @@ import 'package:my_library/services/custom_exception.dart';
 import 'package:my_library/services/general_providers.dart';
 import 'package:my_library/view/screens/auth/sign_in.dart';
 import 'package:my_library/view/widgets/book_text_form_field.dart';
-import 'package:my_library/Theme/responsive_ui.dart';
+import 'package:my_library/controllers/responsive_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class ResetPassword extends ConsumerStatefulWidget {

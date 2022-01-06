@@ -5,7 +5,7 @@ import 'package:my_library/services/general_providers.dart';
 import 'package:my_library/view/screens/home/add_book.dart';
 import 'package:my_library/view/widgets/book_text_form_field.dart';
 import 'package:flutter/material.dart';
-import 'package:my_library/Theme/responsive_ui.dart';
+import 'package:my_library/controllers/responsive_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class SelectShelf extends ConsumerStatefulWidget {
@@ -127,6 +127,7 @@ class SelectShelfState extends ConsumerState<SelectShelf> {
                           CustomTextFormField(
                             hint: 'Enter Shelf name',
                             textEditingController: _newShelf,
+                            capitalization: TextCapitalization.words,
                           ),
                           SizedBox(
                             height: _height / 40,

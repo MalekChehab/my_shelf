@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:my_library/view/screens/splash_screen.dart';
-import 'Theme/theme.dart';
+import 'controllers/theme.dart';
 
 Future main() async{
   WidgetsFlutterBinding.ensureInitialized();

@@ -1,5 +1,3 @@
-// import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -9,7 +7,7 @@ import 'package:my_library/services/general_providers.dart';
 import 'package:my_library/view/screens/auth/reset_password.dart';
 import 'package:my_library/view/screens/auth/welcome_screen.dart';
 import 'package:my_library/view/widgets/book_text_form_field.dart';
-import 'package:my_library/Theme/responsive_ui.dart';
+import 'package:my_library/controllers/responsive_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../home/home_screen.dart';
 

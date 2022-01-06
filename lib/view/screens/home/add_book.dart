@@ -489,8 +489,6 @@ class AddBookState extends ConsumerState<AddBook> {
       description: _description.text == "" ? "" : _description.text,
       edition: _edition.text == "" ? "" : _edition.text,
       editionDate: _editionDate.text == "" ? "" : _editionDate.text,
-      // startReading: ,
-      // endReading: ,
       coverUrl: "",
     );
     if (_formKey.currentState!.validate()) {
