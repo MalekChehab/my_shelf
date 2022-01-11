@@ -16,9 +16,9 @@ class Book {
   late DateTime? dateAdded;
 
 
-  Book({this.id, required this.shelf, required this.title,
+  Book({this.id, this.shelf, required this.title,
     required this.author,required this.numberOfPages, this.publisher, this.translator,
-    required this.genre, required this.tags, this.timesRead,
+    this.genre, this.tags, this.timesRead,
     this.dateAdded, this.location, this.isReading,
     this.coverUrl, this.description, this.isFinished, this.isbn,
     this.pagesRead, this.startReading, this.endReading, this.rating,
@@ -26,7 +26,7 @@ class Book {
 
   factory Book.fromJson(Map<String, dynamic> json){
     return Book(
-      shelf: Shelf(shelfName: json['shelf'] ?? ''),
+      shelf: Shelf(shelfName: json['shelf'], id: json['shelf_id']),
       title: json['title'] ?? '',
       author: json['author'] ?? '',
       genre: json['genre'] ?? '',
@@ -63,6 +63,7 @@ class Book {
 
   Map<String, dynamic> _bookToFirebase(Book book) => <String, dynamic>{
     'shelf': book.shelf!.shelfName,
+    'shelf_id': book.shelf!.id,
     'title': book.title,
     'author': book.author,
     'genre': book.genre,
@@ -78,6 +79,11 @@ class Book {
     'edition': book.edition,
     'edition_date': book.editionDate,
     'cover': book.coverUrl,
+  };
+
+  Map<String, dynamic> editToFirebase() => _editBookToFirebase(this);
+
+  Map<String, dynamic> _editBookToFirebase(Book book) => <String, dynamic>{
     'pages_read': book.pagesRead,
     'is_reading': book.isReading,
     'is_finished': book.isFinished,
@@ -86,10 +92,6 @@ class Book {
     'rating': book.rating,
     'times_read': book.timesRead,
   };
-
-  // void addTag(String tag){
-  //   tags!.add(tag);
-  // }
 
   Shelf? getShelf(){
     return shelf;

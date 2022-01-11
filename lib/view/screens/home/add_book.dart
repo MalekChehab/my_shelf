@@ -489,7 +489,7 @@ class AddBookState extends ConsumerState<AddBook> {
       description: _description.text == "" ? "" : _description.text,
       edition: _edition.text == "" ? "" : _edition.text,
       editionDate: _editionDate.text == "" ? "" : _editionDate.text,
-      coverUrl: "",
+      // coverUrl: "",
     );
     if (_formKey.currentState!.validate()) {
       if (widget.book == null) {
@@ -551,7 +551,7 @@ class AddBookState extends ConsumerState<AddBook> {
                 ],
               ),
             );
-            Future.delayed(const Duration(seconds: 5), () {
+            Future.delayed(const Duration(seconds: 3), () {
               setState(() {
                 _isLoading = false;
               });
@@ -559,7 +559,10 @@ class AddBookState extends ConsumerState<AddBook> {
                 ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
                 Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) => BookDetails(book: newBook)),
+                    MaterialPageRoute(builder: (_) =>
+                        // BookDetails(book: newBook)
+                      const HomeScreen(),
+                    ),
                         // (route) => false
                 );
               });
@@ -579,60 +582,59 @@ class AddBookState extends ConsumerState<AddBook> {
   }
 
   _imgFromCamera() async {
-    final pickedFile = await picker.getImage(source: ImageSource.camera);
-    // _cropImage();
+    final pickedFile = await picker.pickImage(source: ImageSource.camera,);
+    _cropImage(pickedFile!.path);
     setState(() {
-      _imageFile = File(pickedFile!.path);
+      // _imageFile = File(pickedFile!.path);
       _imageTaken = true;
     });
   }
 
   _imgFromGallery() async {
-    final pickedFile = await picker.getImage(source: ImageSource.gallery);
-    // _cropImage();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery,);
+    _cropImage(pickedFile!.path);
     setState(() {
-      _imageFile = File(pickedFile!.path);
+      // _imageFile = File(pickedFile!.path);
       _imageTaken = true;
     });
   }
 
-  // Future<Null> _cropImage() async {
-  //   File? croppedFile = await ImageCropper.cropImage(
-  //       sourcePath: _imageFile.path,
-  //       aspectRatioPresets: Platform.isAndroid
-  //           ? [
-  //         CropAspectRatioPreset.square,
-  //         CropAspectRatioPreset.ratio3x2,
-  //         CropAspectRatioPreset.original,
-  //         CropAspectRatioPreset.ratio4x3,
-  //         CropAspectRatioPreset.ratio16x9
-  //       ]
-  //           : [
-  //         CropAspectRatioPreset.original,
-  //         CropAspectRatioPreset.square,
-  //         CropAspectRatioPreset.ratio3x2,
-  //         CropAspectRatioPreset.ratio4x3,
-  //         CropAspectRatioPreset.ratio5x3,
-  //         CropAspectRatioPreset.ratio5x4,
-  //         CropAspectRatioPreset.ratio7x5,
-  //         CropAspectRatioPreset.ratio16x9
-  //       ],
-  //       androidUiSettings: const AndroidUiSettings(
-  //           toolbarTitle: 'Cropper',
-  //           toolbarColor: Colors.deepOrange,
-  //           toolbarWidgetColor: Colors.white,
-  //           initAspectRatio: CropAspectRatioPreset.original,
-  //           lockAspectRatio: false),
-  //       iosUiSettings: const IOSUiSettings(
-  //         title: 'Cropper',
-  //       ));
-  //   if (croppedFile != null) {
-  //     _imageFile = croppedFile;
-  //     setState(() {
-  //       state = AppState.cropped;
-  //     });
-  //   }
-  // }
+  Future<void> _cropImage(String path) async {
+    File? croppedFile = await ImageCropper.cropImage(
+        sourcePath: path,
+        aspectRatioPresets: Platform.isAndroid
+            ? [
+          CropAspectRatioPreset.square,
+          CropAspectRatioPreset.ratio3x2,
+          CropAspectRatioPreset.original,
+          CropAspectRatioPreset.ratio4x3,
+          CropAspectRatioPreset.ratio16x9
+        ]
+            : [
+          CropAspectRatioPreset.original,
+          CropAspectRatioPreset.square,
+          CropAspectRatioPreset.ratio3x2,
+          CropAspectRatioPreset.ratio4x3,
+          CropAspectRatioPreset.ratio5x3,
+          CropAspectRatioPreset.ratio5x4,
+          CropAspectRatioPreset.ratio7x5,
+          CropAspectRatioPreset.ratio16x9
+        ],
+        androidUiSettings: AndroidUiSettings(
+            toolbarTitle: 'Cropper',
+            toolbarColor: Theme.of(context).primaryColor,
+            toolbarWidgetColor: Theme.of(context).accentColor,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: false),
+        iosUiSettings: const IOSUiSettings(
+          title: 'Cropper',
+        ));
+    if (croppedFile != null) {
+      setState(() {
+        _imageFile = croppedFile;
+      });
+    }
+  }
 
   void _showPicker(context) {
     showModalBottomSheet(
@@ -658,6 +660,7 @@ class AddBookState extends ConsumerState<AddBook> {
                       title: const Text('Gallery'),
                       onTap: () {
                         _imgFromGallery();
+
                         Navigator.pop(context);
                       },
                     ),

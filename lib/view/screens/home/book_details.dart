@@ -12,7 +12,6 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart' as intl;
 import 'add_book.dart';
 import 'home_screen.dart';
-import 'dart:io';
 
 class BookDetails extends ConsumerStatefulWidget {
   final Book? book;
@@ -30,7 +29,6 @@ class BookDetailsState extends ConsumerState<BookDetails>
   late TabController tabController;
   late var _db;
   late bool _isLoading = false;
-  late File file = File('no file');
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +45,6 @@ class BookDetailsState extends ConsumerState<BookDetails>
         child: DefaultTabController(
           length: 2,
           child: NestedScrollView(
-            // scrollBehavior: const ScrollBehavior(androidOverscrollIndicator: AndroidOverscrollIndicator.stretch),
             headerSliverBuilder:
                 (BuildContext context, bool innerBoxIsScrolled) {
               return <Widget>[
@@ -276,7 +273,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                             runSpacing: 6.0,
                                             children: List<Widget>.generate(
                                                 tags.length, (int index) {
-                                              return Chip(
+                                              return tags[index] != '' ? Chip(
                                                 backgroundColor:
                                                     Theme.of(context)
                                                         .buttonColor,
@@ -288,7 +285,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                                         .accentColor,
                                                   ),
                                                 ),
-                                              );
+                                              ) : const SizedBox();
                                             }),
                                           ),
                                         ),
@@ -485,6 +482,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
+                                // text started reading
                                 Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Text(
@@ -494,6 +492,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                   ),
                                 ),
                                 SizedBox(width: _width / 45),
+                                // button isReading
                                 MyButton(
                                   child: Icon(
                                     Icons.check,
@@ -519,6 +518,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                   },
                                 ),
                                 SizedBox(width: _width / 11),
+                                // calendar start_reading
                                 Padding(
                                   padding: const EdgeInsets.all(12.0),
                                   child: GestureDetector(
@@ -574,6 +574,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
+                                // text finidhed reading
                                 Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Text(
@@ -582,6 +583,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                         Theme.of(context).textTheme.headline6,
                                   ),
                                 ),
+                                // button isFinished
                                 MyButton(
                                   child: widget.book!.timesRead == 0 ||
                                           widget.book!.timesRead == 1
@@ -621,6 +623,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                   },
                                 ),
                                 SizedBox(width: _width / 11),
+                                // calendar end_reading
                                 Padding(
                                   padding: const EdgeInsets.all(12.0),
                                   child: GestureDetector(
@@ -824,8 +827,8 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                 setState(() {
                                   _isLoading = true;
                                 });
-                                bool bookEdited = await _db.editBook(
-                                    widget.book, widget.book!.shelf, file);
+                                bool bookEdited = await _db.editBookNotes(
+                                    widget.book, widget.book!.shelf);
                                 if (bookEdited) {
                                   Future.delayed(const Duration(seconds: 3),
                                       () {
@@ -858,6 +861,24 @@ class BookDetailsState extends ConsumerState<BookDetails>
 
   void _pickStartedDate() async {
     DateTime? datePicked = await showDatePicker(
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).primaryColor, // header background color
+              onPrimary: Theme.of(context).hintColor, // header text color
+              onSurface: Theme.of(context).buttonColor, // body text color
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                primary: Theme.of(context).accentColor, // button text color
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+      locale: const Locale('en', 'UK'),
       context: context,
       initialDate: widget.book!.startReading == DateTime(1000, 1, 1) &&
               widget.book!.endReading == DateTime(1000, 1, 1)
@@ -880,6 +901,24 @@ class BookDetailsState extends ConsumerState<BookDetails>
 
   void _pickFinishedDate() async {
     DateTime? datePicked = await showDatePicker(
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).primaryColor, // header background color
+              onPrimary: Theme.of(context).hintColor, // header text color
+              onSurface: Theme.of(context).buttonColor, // body text color
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                primary: Theme.of(context).accentColor, // button text color
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+      locale: const Locale('en', 'UK'),
       context: context,
       initialDate: widget.book!.endReading == DateTime(1000, 1, 1)
           ? DateTime.now()

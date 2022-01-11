@@ -7,6 +7,7 @@ import 'package:my_library/view/widgets/book_text_form_field.dart';
 import 'package:flutter/material.dart';
 import 'package:my_library/controllers/responsive_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:my_library/view/widgets/shelf_list.dart';
 
 class SelectShelf extends ConsumerStatefulWidget {
   const SelectShelf({Key? key}) : super(key: key);
@@ -22,7 +23,7 @@ class SelectShelfState extends ConsumerState<SelectShelf> {
   late bool _large;
   late bool _medium;
   final TextEditingController _newShelf = TextEditingController();
-  late AsyncValue<List<String>> _shelvesList;
+  late AsyncValue<List<Shelf>> _shelvesList;
 
   @override
   Widget build(BuildContext context) {
@@ -64,42 +65,7 @@ class SelectShelfState extends ConsumerState<SelectShelf> {
                               ),
                             ),
                           )
-                        : ListView.builder(
-                            itemCount: shelves.length,
-                            padding: const EdgeInsets.all(8.0),
-                            itemBuilder: (context, index) {
-                              return Align(
-                                alignment: Alignment.center,
-                                child: Container(
-                                  width: _width / 1.5,
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Card(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(30),
-                                    ),
-                                    color: Theme.of(context).primaryColor,
-                                    elevation: 4,
-                                    child: InkWell(
-                                      onTap: () {
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (_) => AddBook(
-                                                  shelf: Shelf(shelfName: shelves[index]),
-                                              ),
-                                          ),
-                                        );
-                                      },
-                                      child: ListTile(
-                                        title: Center(
-                                          child: Text(shelves[index]),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            });
+                        : ShelfList(shelves);
                   },
                 ),
               ),
@@ -136,8 +102,7 @@ class SelectShelfState extends ConsumerState<SelectShelf> {
                             "*Shelf name can't be changed later",
                             style: TextStyle(
                                 fontSize: 12,
-                                color: Theme.of(context).hintColor
-                            ),
+                                color: Theme.of(context).hintColor),
                           ),
                           SizedBox(
                             height: _height / 40,

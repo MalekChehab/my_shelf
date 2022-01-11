@@ -17,12 +17,6 @@ class BookItem extends StatelessWidget {
       onTap: () {
         Navigator.push(
             context, MaterialPageRoute(builder: (_) => BookDetails(book: _book)));
-        // if (MediaQuery.of(context).size.width > wideLayoutThreshold) {
-        //   bookNotifier.selectedIndex = bookNotifier.books.indexOf(_book);
-        // } else {
-        //   Navigator.push(
-        //       context, MaterialPageRoute(builder: (_) => BookDetails(_book)));
-        // }
       },
       child: Container(
         padding: const EdgeInsets.fromLTRB(20.0, 8, 20, 10),
@@ -91,10 +85,6 @@ class BookItem extends StatelessWidget {
                         ),
                       ],
                     ),
-                    // StarRating(
-                    //   starCount: 5,
-                    //   rating: (_book.rating / 2).toDouble(),
-                    // ),
                     Text(
                       _book.genre.toString(),
                       style: Theme.of(context).textTheme.subtitle1,

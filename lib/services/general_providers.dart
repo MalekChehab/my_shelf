@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:my_library/models/book.dart';
+import 'package:my_library/models/shelf.dart';
 import 'package:my_library/services/auth_service.dart';
 import 'firebase_database.dart';
 
@@ -24,6 +25,14 @@ final firebaseDatabaseProvider = Provider<FirebaseDatabase>((ref) {
   return FirebaseDatabase(uid: uid.toString());
 });
 
+final shelvesExistProvider = StreamProvider.autoDispose<bool>((ref) {
+  return ref.watch(firebaseDatabaseProvider).shelvesExist();
+});
+
+final booksExistProvider = StreamProvider.autoDispose<bool>((ref) {
+  return ref.watch(firebaseDatabaseProvider).booksExist();
+});
+
 final allBooksProvider = StreamProvider.autoDispose<List<Book>>((ref) {
   final db = ref.watch(firebaseDatabaseProvider);
   StreamController<List<Book>> controller = StreamController<List<Book>>();
@@ -39,23 +48,17 @@ final allBooksProvider = StreamProvider.autoDispose<List<Book>>((ref) {
   return controller.stream;
 });
 
-final shelvesProvider = StreamProvider.autoDispose<List<String>>((ref) {
-  final _shelvesList = ref.watch(firebaseDatabaseProvider).getShelves();
-  StreamController<List<String>> controller = StreamController<List<String>>();
-  List<String> list = [];
+final shelvesProvider = StreamProvider.autoDispose<List<Shelf>>((ref) {
+  final db = ref.watch(firebaseDatabaseProvider);
+  StreamController<List<Shelf>> controller = StreamController<List<Shelf>>();
+  List<Shelf> list = [];
   bool shelvesExist = false;
-  ref.watch(shelvesExistProvider).whenData((value) => shelvesExist = value);
+  ref.watch(shelvesExistProvider).whenData((value) {
+    return shelvesExist = value;
+  });
   if (shelvesExist) {
-    return _shelvesList;
+    return db.getShelves().map((docs) => docs.map((doc) => Shelf.fromFirestore(doc)).toList());
   }
   controller.add(list);
   return controller.stream;
-});
-
-final shelvesExistProvider = StreamProvider.autoDispose<bool>((ref) {
-  return ref.watch(firebaseDatabaseProvider).shelvesExist();
-});
-
-final booksExistProvider = StreamProvider.autoDispose<bool>((ref) {
-  return ref.watch(firebaseDatabaseProvider).booksExist();
 });
