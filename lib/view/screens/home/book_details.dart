@@ -10,6 +10,7 @@ import 'package:my_library/services/general_providers.dart';
 import 'package:my_library/view/widgets/book_text_form_field.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart' as intl;
+import 'package:my_library/view/widgets/dialog.dart';
 import 'add_book.dart';
 import 'home_screen.dart';
 
@@ -48,9 +49,9 @@ class BookDetailsState extends ConsumerState<BookDetails>
             headerSliverBuilder:
                 (BuildContext context, bool innerBoxIsScrolled) {
               return <Widget>[
+
                 SliverAppBar(
-                  expandedHeight: 270.0,
-                  // floating: true,
+                  expandedHeight: 300.0,
                   pinned: true,
                   actions: [
                     PopupMenuButton<String>(
@@ -103,89 +104,12 @@ class BookDetailsState extends ConsumerState<BookDetails>
                           case 'delete':
                             showDialog(
                                 context: context,
-                                builder: (_) => AlertDialog(
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      title: Text(
-                                        'Are you sure you want to delete this book?',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .subtitle2,
-                                      ),
-                                      content: SizedBox(
-                                          height: 30,
-                                          // width: 30,
-                                          child: Row(
-                                            children: [
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    left: 10.0, right: 10.0),
-                                                child: MyButton(
-                                                    onPressed: () {
-                                                      Navigator.pop(context);
-                                                    },
-                                                    child:
-                                                        const Text('Cancel')),
-                                              ),
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    left: 10.0),
-                                                child: MyButton(
-                                                    onPressed: () async {
-                                                      setState(() {
-                                                        _isLoading = true;
-                                                      });
-                                                      try {
-                                                        bool bookDeleted =
-                                                            await _db
-                                                                .deleteBook(
-                                                                    widget
-                                                                        .book);
-                                                        if (bookDeleted) {
-                                                          Navigator.pop(
-                                                              context);
-                                                          Future.delayed(
-                                                              const Duration(
-                                                                  seconds: 5),
-                                                              () {
-                                                            setState(() {
-                                                              _isLoading =
-                                                                  false;
-                                                            });
-                                                            Future.delayed(
-                                                                const Duration(
-                                                                    seconds: 2),
-                                                                () {
-                                                              Navigator.pushAndRemoveUntil(
-                                                                  context,
-                                                                  MaterialPageRoute(
-                                                                      builder:
-                                                                          (_) =>
-                                                                              const HomeScreen()),
-                                                                  (route) =>
-                                                                      false);
-                                                            });
-                                                          });
-                                                        }
-                                                      } on CustomException catch (e) {
-                                                        setState(() {
-                                                          _isLoading = false;
-                                                        });
-                                                        Fluttertoast.showToast(
-                                                          msg: e.message
-                                                              .toString(),
-                                                          toastLength:
-                                                              Toast.LENGTH_LONG,
-                                                        );
-                                                      }
-                                                    },
-                                                    child:
-                                                        const Text('Delete')),
-                                              ),
-                                            ],
-                                          )),
-                                    ));
+                                builder: (_) => MyDialog(
+                                      buttonLabel: 'Delete',
+                                      onPressed: () => deleteBook(),
+                                      title: 'Are you sure you want to delete this book?',
+                                    ),
+                            );
                             break;
                         }
                       },
@@ -199,7 +123,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
                       children: [
                         Center(
                           child: Padding(
-                            padding: const EdgeInsets.only(left: 40.0, top: 60),
+                            padding: const EdgeInsets.only(left: 30.0, top: 60, bottom: 30),
                             child: Row(
                               children: [
                                 Hero(
@@ -216,8 +140,8 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                         : CachedNetworkImage(
                                             imageUrl: widget.book!.coverUrl
                                                 .toString(),
-                                            height: 200,
-                                            width: 110,
+                                            height: 180,
+                                            width: 120,
                                             fit: BoxFit.cover,
                                           ),
                                   ),
@@ -273,19 +197,22 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                             runSpacing: 6.0,
                                             children: List<Widget>.generate(
                                                 tags.length, (int index) {
-                                              return tags[index] != '' ? Chip(
-                                                backgroundColor:
-                                                    Theme.of(context)
-                                                        .buttonColor,
-                                                label: Text(
-                                                  tags[index],
-                                                  style: TextStyle(
-                                                    fontSize: 13,
-                                                    color: Theme.of(context)
-                                                        .accentColor,
-                                                  ),
-                                                ),
-                                              ) : const SizedBox();
+                                              return tags[index] != ''
+                                                  ? Chip(
+                                                      backgroundColor:
+                                                          Theme.of(context)
+                                                              .buttonColor,
+                                                      label: Text(
+                                                        tags[index],
+                                                        style: TextStyle(
+                                                          fontSize: 13,
+                                                          color:
+                                                              Theme.of(context)
+                                                                  .accentColor,
+                                                        ),
+                                                      ),
+                                                    )
+                                                  : const SizedBox();
                                             }),
                                           ),
                                         ),
@@ -300,152 +227,172 @@ class BookDetailsState extends ConsumerState<BookDetails>
                       ],
                     ),
                   ),
+
+                  // tabs header
+                  bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(50),
+                  child: TabBar(
+                    labelColor: Theme.of(context).buttonColor,
+                    unselectedLabelColor:
+                    Theme.of(context).hintColor.withOpacity(.7),
+                    tabs: const [
+                      Tab(
+                        icon: Icon(Icons.info_rounded),
+                      ),
+                      Tab(
+                        icon: Icon(
+                          Icons.lightbulb_outline_rounded,
+                        ),
+                      ),
+                    ],
+                  ),
+                  ),
                 ),
 
                 // tabs header
-                SliverPersistentHeader(
-                  // pinned: true,
-                  floating: true,
-                  delegate: _SliverAppBarDelegate(
-                    TabBar(
-                      labelColor: Theme.of(context).buttonColor,
-                      unselectedLabelColor:
-                          Theme.of(context).hintColor.withOpacity(.7),
-                      tabs: const [
-                        Tab(
-                          icon: Icon(Icons.info_rounded),
-                        ),
-                        Tab(
-                          icon: Icon(
-                            Icons.lightbulb_outline_rounded,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+
+                // SliverPersistentHeader(
+                //   pinned: true,
+                //   // floating: true,
+                //   delegate: _SliverAppBarDelegate(
+                //     TabBar(controller: _tabController,
+                //       labelColor: Theme.of(context).buttonColor,
+                //       unselectedLabelColor:
+                //           Theme.of(context).hintColor.withOpacity(.7),
+                //       tabs: const [
+                //         Tab(
+                          // icon: Icon(Icons.info_rounded),
+                //         ),
+                //         Tab(
+                          // icon: Icon(
+                          //   Icons.lightbulb_outline_rounded,
+                          // ),
+                //         ),
+                //       ],
+                //     ),
+                //   ),
+                // ),
               ];
             },
             body: TabBarView(
               children: [
+
                 // info tab
-                SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      ListTile(
-                        title: Text(
-                          'Title',
-                          style: Theme.of(context).textTheme.headline6,
-                        ),
-                        subtitle: Text(widget.book!.title,
-                            style: Theme.of(context).textTheme.bodyText2),
+                ListView(
+                  children: [
+                    ListTile(
+                      title: Text(
+                        'Title',
+                        style: Theme.of(context).textTheme.headline6,
                       ),
-                      ListTile(
-                        title: Text(
-                          'Author',
-                          style: Theme.of(context).textTheme.headline6,
-                        ),
-                        subtitle: Text(widget.book!.author.join(', '),
-                            style: Theme.of(context).textTheme.bodyText2),
+                      subtitle: Text(widget.book!.title,
+                          style: Theme.of(context).textTheme.bodyText2),
+                    ),
+                    ListTile(
+                      title: Text(
+                        'Author',
+                        style: Theme.of(context).textTheme.headline6,
                       ),
-                      ListTile(
-                        title: Text(
-                          'Genre',
-                          style: Theme.of(context).textTheme.headline6,
-                        ),
-                        subtitle: Text(widget.book!.genre.toString(),
-                            style: Theme.of(context).textTheme.bodyText2),
+                      subtitle: Text(widget.book!.author.join(', '),
+                          style: Theme.of(context).textTheme.bodyText2),
+                    ),
+                    ListTile(
+                      title: Text(
+                        'Genre',
+                        style: Theme.of(context).textTheme.headline6,
                       ),
-                      ListTile(
-                        title: Text(
-                          'Publisher',
-                          style: Theme.of(context).textTheme.headline6,
-                        ),
-                        subtitle: Text(widget.book!.publisher.toString(),
-                            style: Theme.of(context).textTheme.bodyText2),
+                      subtitle: Text(widget.book!.genre.toString(),
+                          style: Theme.of(context).textTheme.bodyText2),
+                    ),
+                    ListTile(
+                      title: Text(
+                        'Publisher',
+                        style: Theme.of(context).textTheme.headline6,
                       ),
-                      ListTile(
-                        title: Text(
-                          'Publish Date',
-                          style: Theme.of(context).textTheme.headline6,
-                        ),
-                        subtitle: Text(widget.book!.publishDate.toString(),
-                            style: Theme.of(context).textTheme.bodyText2),
+                      subtitle: Text(widget.book!.publisher.toString(),
+                          style: Theme.of(context).textTheme.bodyText2),
+                    ),
+                    ListTile(
+                      title: Text(
+                        'Publish Date',
+                        style: Theme.of(context).textTheme.headline6,
                       ),
-                      ListTile(
-                        title: Text(
-                          'Tags',
-                          style: Theme.of(context).textTheme.headline6,
-                        ),
-                        subtitle: Text(widget.book!.tags!.join(', '),
-                            style: Theme.of(context).textTheme.bodyText2),
+                      subtitle: Text(widget.book!.publishDate.toString(),
+                          style: Theme.of(context).textTheme.bodyText2),
+                    ),
+                    ListTile(
+                      title: Text(
+                        'Tags',
+                        style: Theme.of(context).textTheme.headline6,
                       ),
-                      ListTile(
-                        title: Text(
-                          'ISBN',
-                          style: Theme.of(context).textTheme.headline6,
-                        ),
-                        subtitle: Text(widget.book!.isbn.toString(),
-                            style: Theme.of(context).textTheme.bodyText2),
+                      subtitle: Text(widget.book!.tags!.join(', '),
+                          style: Theme.of(context).textTheme.bodyText2),
+                    ),
+                    ListTile(
+                      title: Text(
+                        'ISBN',
+                        style: Theme.of(context).textTheme.headline6,
                       ),
-                      ListTile(
-                        title: Text(
-                          'Language',
-                          style: Theme.of(context).textTheme.headline6,
-                        ),
-                        subtitle: Text(widget.book!.language.toString(),
-                            style: Theme.of(context).textTheme.bodyText2),
+                      subtitle: Text(widget.book!.isbn.toString(),
+                          style: Theme.of(context).textTheme.bodyText2),
+                    ),
+                    ListTile(
+                      title: Text(
+                        'Language',
+                        style: Theme.of(context).textTheme.headline6,
                       ),
-                      ListTile(
-                        title: Text(
-                          'Number of Pages',
-                          style: Theme.of(context).textTheme.headline6,
-                        ),
-                        subtitle: Text(widget.book!.numberOfPages.toString(),
-                            style: Theme.of(context).textTheme.bodyText2),
+                      subtitle: Text(widget.book!.language.toString(),
+                          style: Theme.of(context).textTheme.bodyText2),
+                    ),
+                    ListTile(
+                      title: Text(
+                        'Number of Pages',
+                        style: Theme.of(context).textTheme.headline6,
                       ),
-                      ListTile(
-                        title: Text(
-                          'Edition',
-                          style: Theme.of(context).textTheme.headline6,
-                        ),
-                        subtitle: Text(widget.book!.edition.toString(),
-                            style: Theme.of(context).textTheme.bodyText2),
+                      subtitle: Text(widget.book!.numberOfPages.toString(),
+                          style: Theme.of(context).textTheme.bodyText2),
+                    ),
+                    ListTile(
+                      title: Text(
+                        'Edition',
+                        style: Theme.of(context).textTheme.headline6,
                       ),
-                      ListTile(
-                        title: Text(
-                          'Edition Date',
-                          style: Theme.of(context).textTheme.headline6,
-                        ),
-                        subtitle: Text(widget.book!.editionDate.toString(),
-                            style: Theme.of(context).textTheme.bodyText2),
+                      subtitle: Text(widget.book!.edition.toString(),
+                          style: Theme.of(context).textTheme.bodyText2),
+                    ),
+                    ListTile(
+                      title: Text(
+                        'Edition Date',
+                        style: Theme.of(context).textTheme.headline6,
                       ),
-                      ListTile(
-                        title: Text(
-                          'Shelf',
-                          style: Theme.of(context).textTheme.headline6,
-                        ),
-                        subtitle: Text(widget.book!.shelf!.shelfName.toString(),
-                            style: Theme.of(context).textTheme.bodyText2),
+                      subtitle: Text(widget.book!.editionDate.toString(),
+                          style: Theme.of(context).textTheme.bodyText2),
+                    ),
+                    ListTile(
+                      title: Text(
+                        'Shelf',
+                        style: Theme.of(context).textTheme.headline6,
                       ),
-                      ListTile(
-                        title: Text(
-                          'Location',
-                          style: Theme.of(context).textTheme.headline6,
-                        ),
-                        subtitle: Text(widget.book!.location.toString(),
-                            style: Theme.of(context).textTheme.bodyText2),
+                      subtitle: Text(widget.book!.shelf!.shelfName.toString(),
+                          style: Theme.of(context).textTheme.bodyText2),
+                    ),
+                    ListTile(
+                      title: Text(
+                        'Location',
+                        style: Theme.of(context).textTheme.headline6,
                       ),
-                      ListTile(
-                        title: Text(
-                          'Description',
-                          style: Theme.of(context).textTheme.headline6,
-                        ),
-                        subtitle: Text(widget.book!.description.toString(),
-                            style: Theme.of(context).textTheme.bodyText2),
+                      subtitle: Text(widget.book!.location.toString(),
+                          style: Theme.of(context).textTheme.bodyText2),
+                    ),
+                    ListTile(
+                      title: Text(
+                        'Description',
+                        style: Theme.of(context).textTheme.headline6,
                       ),
-                    ],
-                  ),
+                      subtitle: Text(widget.book!.description.toString(),
+                          style: Theme.of(context).textTheme.bodyText2),
+                    ),
+                  ],
                 ),
 
                 // notes tab
@@ -803,7 +750,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
                           child: ListTile(
                             title: Text('Notes',
                                 style: Theme.of(context).textTheme.headline6),
-                            subtitle: TextField(),
+                            subtitle: const TextField(),
                           ),
                         ),
 
@@ -859,13 +806,45 @@ class BookDetailsState extends ConsumerState<BookDetails>
     );
   }
 
+  deleteBook() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      bool bookDeleted = await _db.deleteBook(widget.book);
+      if (bookDeleted) {
+        Navigator.pop(context);
+        Future.delayed(const Duration(seconds: 5), () {
+          setState(() {
+            _isLoading = false;
+          });
+          Future.delayed(const Duration(seconds: 2), () {
+            Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+                (route) => false);
+          });
+        });
+      }
+    } on CustomException catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      Fluttertoast.showToast(
+        msg: e.message.toString(),
+        toastLength: Toast.LENGTH_LONG,
+      );
+    }
+  }
+
   void _pickStartedDate() async {
     DateTime? datePicked = await showDatePicker(
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Theme.of(context).primaryColor, // header background color
+              primary:
+                  Theme.of(context).primaryColor, // header background color
               onPrimary: Theme.of(context).hintColor, // header text color
               onSurface: Theme.of(context).buttonColor, // body text color
             ),
@@ -905,7 +884,8 @@ class BookDetailsState extends ConsumerState<BookDetails>
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: Theme.of(context).primaryColor, // header background color
+              primary:
+                  Theme.of(context).primaryColor, // header background color
               onPrimary: Theme.of(context).hintColor, // header text color
               onSurface: Theme.of(context).buttonColor, // body text color
             ),
@@ -1069,29 +1049,29 @@ class BookDetailsState extends ConsumerState<BookDetails>
   }
 }
 
-class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  _SliverAppBarDelegate(this._tabBar);
-
-  final TabBar _tabBar;
-
-  @override
-  double get minExtent => _tabBar.preferredSize.height;
-  @override
-  double get maxExtent => _tabBar.preferredSize.height;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      child: _tabBar,
-    );
-  }
-
-  @override
-  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
-    return false;
-  }
-}
+// class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+//   _SliverAppBarDelegate(this._tabBar);
+//
+//   final TabBar _tabBar;
+//
+//   @override
+//   double get minExtent => _tabBar.preferredSize.height;
+//   @override
+//   double get maxExtent => _tabBar.preferredSize.height;
+//
+//   @override
+//   Widget build(
+//       BuildContext context, double shrinkOffset, bool overlapsContent) {
+//     return Container(
+//       child: _tabBar,
+//     );
+//   }
+//
+//   @override
+//   bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+//     return false;
+//   }
+// }
 
 class CustomSliderThumbCircle extends SliderComponentShape {
   final double thumbRadius;

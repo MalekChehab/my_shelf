@@ -7,6 +7,7 @@ import 'package:my_library/view/widgets/book_text_form_field.dart';
 import 'package:flutter/material.dart';
 import 'package:my_library/controllers/responsive_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:my_library/view/widgets/dialog.dart';
 import 'package:my_library/view/widgets/shelf_list.dart';
 
 class SelectShelf extends ConsumerStatefulWidget {
@@ -80,57 +81,32 @@ class SelectShelfState extends ConsumerState<SelectShelf> {
             showDialog(
                 context: context,
                 builder: (BuildContext context) {
-                  return AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                    title: const Text("Add a new shelf"),
-                    content: SizedBox(
-                      height: _height / 4,
-                      child: SingleChildScrollView(
-                        child: Column(children: [
-                          CustomTextFormField(
-                            hint: 'Enter Shelf name',
-                            textEditingController: _newShelf,
-                            capitalization: TextCapitalization.words,
-                          ),
-                          SizedBox(
-                            height: _height / 40,
-                          ),
-                          Text(
-                            "*Shelf name can't be changed later",
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context).hintColor),
-                          ),
-                          SizedBox(
-                            height: _height / 40,
-                          ),
-                          MyButton(
-                            child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text('Add new shelf'),
-                            ),
-                            onPressed: () async {
-                              Shelf newShelf = Shelf(shelfName: _newShelf.text);
-                              Navigator.pop(context);
-                              // Navigator.pop(context, newShelf);
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => AddBook(shelf: newShelf)),
-                              );
-                            },
-                          ),
-                        ]),
+                  return MyDialog(
+                      buttonLabel: 'Add',
+                      onPressed: () => addNewShelf(),
+                      title: 'Add a new shelf',
+                      textField1: CustomTextFormField(
+                        capitalization: TextCapitalization.words,
+                        icon: Icons.house_siding_rounded,
+                        hint: 'Enter Shelf Name',
+                        textEditingController: _newShelf,
                       ),
-                    ),
                   );
-                });
+                }
+            );
           },
         ),
       ),
+    );
+  }
+
+  addNewShelf() async {
+    Shelf newShelf = Shelf(shelfName: _newShelf.text);
+    Navigator.pop(context);
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+          builder: (_) => AddBook(shelf: newShelf)),
     );
   }
 }

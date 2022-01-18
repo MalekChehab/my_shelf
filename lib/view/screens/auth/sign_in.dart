@@ -242,7 +242,7 @@ class SignInState extends ConsumerState<SignIn> {
             if (_signedIn) {
               Future.delayed(const Duration(seconds: 1), () {
                 _auth.getCurrentUser().updateDisplayName(_auth.getUserName());
-                _db.updateUser(_auth.getUserName());
+                _db.updateUser(name: _auth.getUserName());
                 setState(() {
                   _isLoading = false;
                 });

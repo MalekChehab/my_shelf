@@ -3,21 +3,24 @@ import 'package:my_library/controllers/responsive_ui.dart';
 
 class CustomTextFormField extends StatefulWidget {
   final String? hint;
-  final TextEditingController textEditingController;
+  final TextEditingController? textEditingController;
   final TextInputType? keyboardType;
   final IconData? icon;
   final FormFieldValidator? validator;
   final TextCapitalization? capitalization;
   final Function(String)? onChanged;
+  final TextStyle? hintStyle;
 
   const CustomTextFormField(
-      {Key? key, this.hint,
-        required this.textEditingController,
+      {Key? key,
+        this.hint,
+        this.textEditingController,
         this.keyboardType,
         this.icon,
         this.validator,
         this.capitalization,
         this.onChanged,
+        this.hintStyle,
       }) : super(key: key);
 
   @override
@@ -55,6 +58,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               size: 20,
             ),
           hintText: widget.hint,
+          hintStyle: widget.hintStyle,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30.0),
               borderSide: BorderSide.none),
@@ -71,6 +75,7 @@ class PasswordTextField extends StatefulWidget{
   final bool obscureText;
   final IconData? icon;
   final FormFieldValidator? validator;
+  final TextStyle? hintStyle;
 
   PasswordTextField(
       {this.hint,
@@ -78,6 +83,7 @@ class PasswordTextField extends StatefulWidget{
         this.keyboardType,
         this.icon,
         this.validator,
+        this.hintStyle,
         this.obscureText= true,
       });
 
@@ -112,22 +118,29 @@ class _PasswordTextFieldState extends State<PasswordTextField> {
         keyboardType: widget.keyboardType,
         // cursorColor: Colors.red[500],
         decoration: InputDecoration(
-          prefixIcon: Icon(widget.icon,
+          prefixIcon: Icon(
+              widget.icon,
               color: Theme.of(context).iconTheme.color,
-              size: 20),
+              size: 18
+          ),
           hintText: widget.hint,
+          hintStyle: widget.hintStyle,
           suffixIcon: GestureDetector(
             onTap: () {
               setState(() {
                 _obscureText = !_obscureText;
               });
             },
-            child: Icon(_obscureText ? Icons.visibility : Icons.visibility_off,
-            color: Theme.of(context).accentColor),
+            child: Icon(
+              _obscureText ? Icons.visibility : Icons.visibility_off,
+              color: Theme.of(context).accentColor,
+              size: 22,
+            ),
           ),
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30.0),
-              borderSide: BorderSide.none),
+              borderSide: BorderSide.none
+          ),
         ),
       ),
     );

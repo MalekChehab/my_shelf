@@ -228,7 +228,7 @@ class AddBookState extends ConsumerState<AddBook> {
         padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
-            Icon(Icons.house_siding, color: Theme.of(context).buttonColor),
+            Icon(Icons.house_siding_rounded, color: Theme.of(context).buttonColor),
             const SizedBox(width: 10),
             Align(
               alignment: Alignment.centerLeft,

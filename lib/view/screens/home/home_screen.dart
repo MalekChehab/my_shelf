@@ -4,8 +4,8 @@ import 'package:loading_overlay/loading_overlay.dart';
 import 'package:my_library/models/book.dart';
 import 'package:my_library/services/auth_service.dart';
 import 'package:my_library/services/general_providers.dart';
-import 'package:my_library/view/screens/auth/welcome_screen.dart';
 import 'package:my_library/view/screens/home/add_book.dart';
+import 'package:my_library/view/screens/home/settings_screen.dart';
 import 'package:my_library/view/screens/home/wish_list_screen.dart';
 import 'package:my_library/view/widgets/book_list.dart';
 
@@ -100,16 +100,17 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                       tooltip: 'Settings',
                       icon: const Icon(Icons.settings_rounded),
                       onPressed: () async {
-                        bool signedOut = await _auth.signOut();
-                        if (signedOut) {
-                          // Future.delayed(const Duration(seconds: 2), () async {
-                          Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const WelcomeScreen()),
-                              (route) => false);
-                          // });
-                        }
+                        // bool signedOut = await _auth.signOut();
+                        // if (signedOut) {
+                        //   Navigator.pushAndRemoveUntil(
+                        //       context,
+                        //       MaterialPageRoute(
+                        //           builder: (_) => const WelcomeScreen()),
+                        //       (route) => false);
+
+                        Navigator.push(context, MaterialPageRoute(
+                          builder: (_) => const SettingsScreen()
+                        ));
                       },
                     ),
                   ],

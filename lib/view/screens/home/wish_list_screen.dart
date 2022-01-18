@@ -1,18 +1,8 @@
-import 'dart:ui';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:loading_overlay/loading_overlay.dart';
-import 'package:my_library/models/book.dart';
-import 'package:my_library/models/shelf.dart';
-import 'package:my_library/view/screens/auth/welcome_screen.dart';
 import 'package:my_library/view/screens/home/add_book.dart';
-import 'package:my_library/view/widgets/book_item.dart';
-import 'package:my_library/view/widgets/book_list.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-
+import 'package:my_library/view/screens/home/settings_screen.dart';
 import 'home_screen.dart';
 
 class WishListScreen extends StatefulWidget {
@@ -23,11 +13,7 @@ class WishListScreen extends StatefulWidget {
 }
 
 class _WishListScreenState extends State<WishListScreen> {
-  late bool _isLoading = false;
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-  final usersCollection = FirebaseFirestore.instance.collection('users');
-  late List<String> shelvesStrings = [];
-  final List<Book> finalBooksList = [];
+  late final bool _isLoading = false;
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -51,22 +37,9 @@ class _WishListScreenState extends State<WishListScreen> {
                       tooltip: 'Settings',
                       icon: const Icon(Icons.settings_rounded),
                       onPressed: () async {
-                        setState(() {
-                          _isLoading = true;
-                        });
-                        Future.delayed(const Duration(seconds: 2), () async {
-                          await GoogleSignIn().signOut();
-                          await FirebaseAuth.instance.signOut().then((value) {
-                            setState(() {
-                              _isLoading = false;
-                            });
-                            Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => WelcomeScreen()),
-                                    (route) => false);
-                          });
-                        });
+                        Navigator.push(context, MaterialPageRoute(
+                            builder: (_) => const SettingsScreen()
+                        ));
                       },
                     ),
                   ],
@@ -149,31 +122,6 @@ class _WishListScreenState extends State<WishListScreen> {
             )),
       ),
     );
-  }
-
-  shelvesList() {
-    Stream<Object> snap;
-    usersCollection.doc(uid).get().then((value) {
-      shelvesStrings = List.castFrom(value.data()!['shelves'] as List);
-      for (String shelf in shelvesStrings) {
-        usersCollection.doc(uid).collection(shelf).get().then((value) {
-          createBookList(value);
-        });
-      }
-    });
-    print('${finalBooksList.length} books');
-    print('${shelvesStrings.length} shelves');
-  }
-
-  createBookList(QuerySnapshot snapshot) async {
-    var docs = snapshot.docs;
-    for (var doc in docs) {
-      if (finalBooksList.where((book) => book.id == doc.id).isEmpty) {
-        setState(() {
-          finalBooksList.add(Book.fromFirestore(doc));
-        });
-      }
-    }
   }
 }
 

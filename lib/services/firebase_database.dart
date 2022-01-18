@@ -26,8 +26,8 @@ class FirebaseDatabase {
 
   CollectionReference get userCollection => _usersCollection;
 
-  Future<void> updateUser(String name, String _uid) async {
-    await _usersCollection.doc(_uid).set({
+  Future<void> updateUser({required String name, String? uid}) async {
+    await _usersCollection.doc(uid?? this.uid).set({
       'name': name,
     }, SetOptions(merge: true));
   }
@@ -138,7 +138,7 @@ class FirebaseDatabase {
       String fileName, Shelf shelf, String bookDocId, File _imageFile) async {
     try {
       TaskSnapshot snapshot = await FirebaseStorage.instance
-          .ref('$uid/book_covers/$fileName')
+          .ref('$uid/${shelf.id}/book_covers/$fileName')
           .putFile(_imageFile);
       if (snapshot.state == TaskState.success) {
         final String downloadUrl = await snapshot.ref.getDownloadURL();
@@ -229,7 +229,7 @@ class FirebaseDatabase {
         }, SetOptions(merge: true));
         if (book.coverUrl != "") {
           FirebaseStorage.instance
-              .ref('$uid/book_covers/${book.id}.jpg')
+              .ref('$uid/${book.shelf!.id}/book_covers/${book.id}.jpg')
               .delete();
         }
         bookDeleted = true;
@@ -264,7 +264,7 @@ class FirebaseDatabase {
         }
         else {
           Reference ref = FirebaseStorage.instance
-              .ref('$uid/book_covers/${newBook.id}.jpg');
+              .ref('$uid/${shelf.id}/book_covers/${newBook.id}.jpg');
           try {
             String url = await ref.getDownloadURL();
             await _usersCollection
@@ -305,5 +305,17 @@ class FirebaseDatabase {
       throw CustomException(message: e.message);
     }
     return bookEdited;
+  }
+
+  Future<bool> deleteUserData(String uid) async{
+    bool userDataDeleted = false;
+    try{
+      await _usersCollection.doc(uid).delete().then((value) {
+        FirebaseStorage.instance.ref(uid).delete();
+      });
+    }on FirebaseException catch (e){
+      throw CustomException(message: e.message);
+    }
+    return userDataDeleted;
   }
 }

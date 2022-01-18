@@ -223,8 +223,7 @@ class RegisterState extends ConsumerState<Register> {
                   email: _email.text, password: _password.text);
               if (_isRegistered) {
                 _auth.getCurrentUser().updateDisplayName(_name.text);
-                // print(_auth.getUserName());
-                _db.updateUser(_name.text, _auth.getUserId().toString());
+                _db.updateUser(name: _name.text, uid: _auth.getUserId().toString());
                 setState(() {
                   _isLoading = false;
                 });

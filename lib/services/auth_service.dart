@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:my_library/services/firebase_database.dart';
 import 'custom_exception.dart';
 
 class AuthenticationService {
@@ -55,7 +58,7 @@ class AuthenticationService {
     return emailSent;
   }
 
-  Future<bool> googleSignIn() async{
+  Future<bool> googleSignIn() async {
     bool logInSuccessful = false;
     try {
       final GoogleSignInAccount? googleUser =
@@ -80,7 +83,7 @@ class AuthenticationService {
     return logInSuccessful;
   }
 
-  Future<bool> register({required String email, required String password}) async{
+  Future<bool> register({required String email, required String password}) async {
     bool registerSuccessful = false;
     try {
       await _firebaseAuth.createUserWithEmailAndPassword(email: email, password: password)
@@ -104,7 +107,7 @@ class AuthenticationService {
      return logInSuccessful;
   }
 
-  Future<bool> signOut() async{
+  Future<bool> signOut() async {
     bool signOutSuccessful = false;
     try {
       await _firebaseAuth.signOut();
@@ -114,6 +117,69 @@ class AuthenticationService {
       throw CustomException(message: _getMessageFromErrorCode());
     }
     return signOutSuccessful;
+  }
+
+  Future<bool> checkPassword(String password) async{
+    bool passwordChecked = false;
+    try{
+      AuthCredential credentials = EmailAuthProvider.credential(
+          email: _firebaseAuth.currentUser!.email.toString(),
+          password: password
+      );
+      await _firebaseAuth.currentUser?.
+      reauthenticateWithCredential(credentials).then((value) {
+        passwordChecked = true;
+      });
+    } on FirebaseAuthException catch (e){
+      throw CustomException(message: e.message);
+    }
+    return passwordChecked;
+  }
+
+  Future<bool> changeEmail(String newEmail) async {
+    bool emailChanged = false;
+    try{
+      await _firebaseAuth.currentUser?.updateEmail(newEmail)
+          .then((value) => emailChanged = true);
+    } on FirebaseAuthException catch(e){
+      throw CustomException(message: e.message);
+    }
+    return emailChanged;
+  }
+
+  Future<bool> changePassword(String oldPassword, String newPassword) async {
+    bool passwordChanged = false;
+    try{
+      bool passwordChecked = await checkPassword(oldPassword);
+      if(passwordChecked){
+        await _firebaseAuth.currentUser?.
+        updatePassword(newPassword).then((value) => passwordChanged = true);
+      }
+    } on FirebaseAuthException catch(e){
+      throw CustomException(message: e.message);
+    }
+    return passwordChanged;
+  }
+
+  Future<bool> deleteUser(String email, String password) async {
+    bool userDeleted = false;
+    try{
+      AuthCredential credentials = EmailAuthProvider.credential(email: email, password: password);
+      await _firebaseAuth.currentUser?.reauthenticateWithCredential(credentials).then((credentials) async {
+        String uid = credentials.user!.uid;
+        var _db = FirebaseDatabase(uid: uid);
+        _db.deleteUserData(uid);
+        await _firebaseAuth.currentUser?.delete().then((_) async {
+          // await FirebaseFirestore.instance.collection('users').doc(uid).delete().then((_) {
+          //   FirebaseStorage.instance.ref(uid).delete();
+          // });
+          return userDeleted = true;
+        });
+      });
+    } on FirebaseAuthException catch(e){
+      throw CustomException(message: e.message);
+    }
+    return userDeleted;
   }
 
   String _getMessageFromErrorCode() {
