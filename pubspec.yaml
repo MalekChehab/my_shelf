@@ -54,6 +54,10 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   settings_ui:
+  blurhash:
+  octo_image:
+  curved_navigation_bar: ^1.0.1
+
 
 
   # The following adds the Cupertino Icons font to your application.

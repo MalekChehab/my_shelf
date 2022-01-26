@@ -1,15 +1,18 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:my_library/models/book.dart';
 import 'package:my_library/models/shelf.dart';
 import 'package:my_library/services/custom_exception.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:blurhash/blurhash.dart' as blur;
 
 class FirebaseDatabase {
   FirebaseDatabase({required this.uid});
-  final String uid;
+  final String? uid;
   final _usersCollection = FirebaseFirestore.instance.collection('users');
   late final BehaviorSubject<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
       _booksController =
@@ -33,7 +36,7 @@ class FirebaseDatabase {
   }
 
   Stream<bool> shelvesExist() {
-    if (uid.isNotEmpty) {
+    if (uid!=null) {
       var snapshots = _usersCollection.doc(uid).snapshots();
       snapshots.forEach((snapshot) {
         if (snapshot.data()!['shelves'] != null &&
@@ -46,7 +49,7 @@ class FirebaseDatabase {
   }
 
   Stream<bool> booksExist() {
-    if (uid.isNotEmpty) {
+    if (uid!=null) {
       var snapshots = _usersCollection.doc(uid).snapshots();
       snapshots.forEach((snapshot) {
         if (snapshot.data()!['total_books'] != null &&
@@ -123,7 +126,7 @@ class FirebaseDatabase {
           "language": FieldValue.arrayUnion([book.language]),
           "total_books": FieldValue.increment(1),
         }, SetOptions(merge: true));
-        if (_imageFile.path != 'no file') {
+        if (_imageFile.path != 'no image') {
           uploadImageToFirebase('${doc.id}.jpg', shelf, doc.id, _imageFile);
         }
         bookAdded = true;
@@ -134,9 +137,16 @@ class FirebaseDatabase {
     return bookAdded;
   }
 
+  Future<String> blurHashEncode(File file) async {
+    Uint8List pixels = file.readAsBytesSync();
+    String result = await blur.BlurHash.encode(pixels, 4, 3);
+    return result;
+  }
+
   Future uploadImageToFirebase(
       String fileName, Shelf shelf, String bookDocId, File _imageFile) async {
     try {
+      final String blurHash = await blurHashEncode(_imageFile);
       TaskSnapshot snapshot = await FirebaseStorage.instance
           .ref('$uid/${shelf.id}/book_covers/$fileName')
           .putFile(_imageFile);
@@ -150,6 +160,7 @@ class FirebaseDatabase {
             .doc(bookDocId)
             .set({
           "cover": downloadUrl,
+          'blur_hash': blurHash,
         }, SetOptions(merge: true));
       } else {
         throw ('This file is not an image');
@@ -258,15 +269,15 @@ class FirebaseDatabase {
           "publisher": FieldValue.arrayUnion([newBook.publisher]),
           "language": FieldValue.arrayUnion([newBook.language]),
         }, SetOptions(merge: true));
-        if (_imageFile.path != 'no file') {
-          uploadImageToFirebase(
+        if (_imageFile.path != 'no image' && _imageFile.path != 'delete image') { //if user took a new image
+          uploadImageToFirebase( //upload image to firebase
               '${newBook.id}.jpg', shelf, newBook.id.toString(), _imageFile);
         }
-        else {
+        else if(_imageFile.path == 'delete image') {// if user removed the image
           Reference ref = FirebaseStorage.instance
               .ref('$uid/${shelf.id}/book_covers/${newBook.id}.jpg');
           try {
-            String url = await ref.getDownloadURL();
+            await ref.delete();
             await _usersCollection
                 .doc(uid)
                 .collection('shelves')
@@ -274,7 +285,8 @@ class FirebaseDatabase {
                 .collection('books')
                 .doc(newBook.id.toString())
                 .set({
-              "cover": url,
+              "cover": null,
+              'blur_hash': null,
             }, SetOptions(merge: true));
           }catch(e){
             throw CustomException(message: e.toString());
@@ -310,9 +322,11 @@ class FirebaseDatabase {
   Future<bool> deleteUserData(String uid) async{
     bool userDataDeleted = false;
     try{
-      await _usersCollection.doc(uid).delete().then((value) {
-        FirebaseStorage.instance.ref(uid).delete();
+      await _usersCollection.doc(uid).delete().then((_) async {
+        _booksController.close();
+        _shelvesController.close();
       });
+      // await FirebaseStorage.instance.ref('$uid').delete();
     }on FirebaseException catch (e){
       throw CustomException(message: e.message);
     }

@@ -18,7 +18,8 @@ class AuthenticationService {
     try{
       return _firebaseAuth.currentUser != null;
     }on FirebaseAuthException catch (e) {
-      throw CustomException(message: e.message);
+      errorCode = e.code;
+      throw CustomException(message: _getMessageFromErrorCode());
     }
   }
 
@@ -26,7 +27,8 @@ class AuthenticationService {
     try {
       return _firebaseAuth.currentUser;
     } on FirebaseAuthException catch (e) {
-      throw CustomException(message: e.message);
+      errorCode = e.code;
+      throw CustomException(message: _getMessageFromErrorCode());
     }
   }
 
@@ -34,7 +36,8 @@ class AuthenticationService {
     try {
       return _firebaseAuth.currentUser!.uid;
     } on FirebaseAuthException catch (e) {
-      throw CustomException(message: e.message);
+      errorCode = e.code;
+      throw CustomException(message: _getMessageFromErrorCode());
     }
   }
 
@@ -42,7 +45,8 @@ class AuthenticationService {
     try{
       return _firebaseAuth.currentUser!.displayName.toString();
     } on FirebaseAuthException catch (e) {
-      throw CustomException(message: e.message);
+      errorCode = e.code;
+      throw CustomException(message: _getMessageFromErrorCode());
     }
   }
 
@@ -119,7 +123,7 @@ class AuthenticationService {
     return signOutSuccessful;
   }
 
-  Future<bool> checkPassword(String password) async{
+  Future<bool> checkPassword({required String password}) async{
     bool passwordChecked = false;
     try{
       AuthCredential credentials = EmailAuthProvider.credential(
@@ -131,53 +135,53 @@ class AuthenticationService {
         passwordChecked = true;
       });
     } on FirebaseAuthException catch (e){
-      throw CustomException(message: e.message);
+      errorCode = e.code;
+      throw CustomException(message: _getMessageFromErrorCode());
     }
     return passwordChecked;
   }
 
-  Future<bool> changeEmail(String newEmail) async {
+  Future<bool> changeEmail({required String newEmail}) async {
     bool emailChanged = false;
     try{
       await _firebaseAuth.currentUser?.updateEmail(newEmail)
           .then((value) => emailChanged = true);
     } on FirebaseAuthException catch(e){
-      throw CustomException(message: e.message);
+      errorCode = e.code;
+      throw CustomException(message: _getMessageFromErrorCode());
     }
     return emailChanged;
   }
 
-  Future<bool> changePassword(String oldPassword, String newPassword) async {
+  Future<bool> changePassword({required String oldPassword, required String newPassword}) async {
     bool passwordChanged = false;
     try{
-      bool passwordChecked = await checkPassword(oldPassword);
+      bool passwordChecked = await checkPassword(password: oldPassword);
       if(passwordChecked){
         await _firebaseAuth.currentUser?.
         updatePassword(newPassword).then((value) => passwordChanged = true);
       }
     } on FirebaseAuthException catch(e){
-      throw CustomException(message: e.message);
+      errorCode = e.code;
+      throw CustomException(message: _getMessageFromErrorCode());
     }
     return passwordChanged;
   }
 
-  Future<bool> deleteUser(String email, String password) async {
+  Future<bool> deleteUser({required String email, required String password}) async {
     bool userDeleted = false;
     try{
       AuthCredential credentials = EmailAuthProvider.credential(email: email, password: password);
       await _firebaseAuth.currentUser?.reauthenticateWithCredential(credentials).then((credentials) async {
-        String uid = credentials.user!.uid;
-        var _db = FirebaseDatabase(uid: uid);
-        _db.deleteUserData(uid);
-        await _firebaseAuth.currentUser?.delete().then((_) async {
-          // await FirebaseFirestore.instance.collection('users').doc(uid).delete().then((_) {
-          //   FirebaseStorage.instance.ref(uid).delete();
-          // });
+        await FirebaseDatabase(uid: credentials.user!.uid)
+            .deleteUserData(credentials.user!.uid);
+        await _firebaseAuth.currentUser!.delete().then((_) async {
           return userDeleted = true;
         });
       });
     } on FirebaseAuthException catch(e){
-      throw CustomException(message: e.message);
+      errorCode = e.code;
+      throw CustomException(message: _getMessageFromErrorCode());
     }
     return userDeleted;
   }
@@ -187,28 +191,28 @@ class AuthenticationService {
       case "ERROR_EMAIL_ALREADY_IN_USE":
       case "account-exists-with-different-credential":
       case "email-already-in-use":
-        return "An account already exists for that email.";
+        return "An account already exists for that email";
       case "weak-password":
-        return "The password provided is too weak.";
+        return "The password provided is too weak";
       case "ERROR_WRONG_PASSWORD":
       case "wrong-password":
-        return "Wrong email/password combination.";
+        return "Wrong password";
       case "ERROR_USER_NOT_FOUND":
       case "user-not-found":
-        return "No user found with this email.";
+        return "No user found with this email";
       case "ERROR_USER_DISABLED":
       case "user-disabled":
-        return "User disabled.";
+        return "User disabled";
       case "ERROR_TOO_MANY_REQUESTS":
       case "operation-not-allowed":
-        return "Too many requests to log into this account.";
+        return "Too many requests to log into this account";
       case "ERROR_OPERATION_NOT_ALLOWED":
-        return "Server error, please try again later.";
+        return "Server error, please try again later";
       case "ERROR_INVALID_EMAIL":
       case "invalid-email":
-        return "Email address is invalid.";
+        return "Email address is invalid";
       default:
-        return "Login failed. Please try again.";
+        return "Operation failed. Please try again.";
     }
   }
 

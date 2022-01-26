@@ -3,6 +3,7 @@ import 'package:my_library/models/book.dart';
 import 'package:my_library/view/screens/home/book_details.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:octo_image/octo_image.dart';
 
 class BookItem extends StatelessWidget {
   final Book _book;
@@ -42,10 +43,19 @@ class BookItem extends StatelessWidget {
                     //   image: _book!.coverUrl.toString(),
                     //   fit: BoxFit.cover,
                     // ),
-                    CachedNetworkImage(
-                      imageUrl: _book.coverUrl.toString(),
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Image.asset('assets/images/home.png'),
+                    // CachedNetworkImage(
+                    //   imageUrl: _book.coverUrl.toString(),
+                    //   fit: BoxFit.cover,
+                    //   placeholder: (context, url) => Image.asset('assets/images/home.png'),
+                    // ),
+                    AspectRatio(
+                      aspectRatio: 0.6,
+                      child: OctoImage(
+                        image: CachedNetworkImageProvider(_book.coverUrl.toString()), // posts is the list of document snapshots
+                        placeholderBuilder: OctoPlaceholder.blurHash(_book.blurHash.toString()),
+                        errorBuilder: OctoError.icon(color: Colors.red),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),

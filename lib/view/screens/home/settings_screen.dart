@@ -70,14 +70,12 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
               tiles: [
                 SettingsTile(
                   title: const Text('Security'),
-                  // subtitle: 'Fingerprint',
                   leading: const Icon(Icons.lock),
                   onPressed: (BuildContext context) {},
                 ),
                 SettingsTile.switchTile(
                   title: const Text('Use fingerprint'),
                   leading: const Icon(Icons.fingerprint),
-                  // switchValue: true,
                   onToggle: (value) {}, initialValue: null,
                 ),
               ],
@@ -112,7 +110,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                             onPressed: () async { // check password is correct
                               try {
                                 bool passwordChecked = await _auth
-                                    .checkPassword(_passwordController.text);
+                                    .checkPassword(password: _passwordController.text);
                                 if (passwordChecked) {
                                   Navigator.pop(context);
                                   showDialog(
@@ -139,7 +137,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                                             try {
                                               bool emailUpdated =
                                                   await _auth.changeEmail(
-                                                      _emailController.text);
+                                                      newEmail: _emailController.text);
                                               if (emailUpdated) {
                                                 setState(() {
                                                   _isLoading = false;
@@ -231,7 +229,8 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                               });
                               try {
                                 bool passwordChanged = await _auth.changePassword(
-                                    _oldPasswordController.text, _newPasswordController.text);
+                                    oldPassword: _oldPasswordController.text,
+                                    newPassword: _newPasswordController.text);
                                 if(passwordChanged){
                                   setState(() {
                                     _isLoading = false;
@@ -309,7 +308,9 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                               _isLoading = true;
                             });
                             try{
-                              bool accountDeleted = await _auth.deleteUser(_emailController.text, _passwordController.text);
+                              bool accountDeleted = await _auth.deleteUser(
+                                  email: _emailController.text,
+                                  password: _passwordController.text);
                               if(accountDeleted){
                                 setState(() {
                                   _isLoading = false;

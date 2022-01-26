@@ -7,7 +7,7 @@ class Book {
   late List<dynamic> author;
   late int numberOfPages;
   late List<dynamic>? tags;
-  late String? id,genre,translator, publisher, description, coverUrl, location;
+  late String? id,genre,translator, publisher, description, coverUrl, blurHash, location;
   late String? isbn, edition, editionDate, language, publishDate;
   late bool? isFinished,isReading;
   late int? pagesRead, timesRead;
@@ -18,7 +18,7 @@ class Book {
 
   Book({this.id, this.shelf, required this.title,
     required this.author,required this.numberOfPages, this.publisher, this.translator,
-    this.genre, this.tags, this.timesRead,
+    this.genre, this.tags, this.timesRead, this.blurHash,
     this.dateAdded, this.location, this.isReading,
     this.coverUrl, this.description, this.isFinished, this.isbn,
     this.pagesRead, this.startReading, this.endReading, this.rating,
@@ -42,6 +42,7 @@ class Book {
       edition: json['edition'] ?? '',
       editionDate: json['edition_date'] ?? '',
       coverUrl: json['cover'] ?? '',
+      blurHash: json['blur_hash'],
       pagesRead: int.parse(json['pages_read'].toString()),
       isReading: json['is_reading'].toString() == 'true',
       isFinished: json['is_finished'].toString() == 'true',
@@ -78,7 +79,6 @@ class Book {
     'description': book.description,
     'edition': book.edition,
     'edition_date': book.editionDate,
-    'cover': book.coverUrl,
   };
 
   Map<String, dynamic> editToFirebase() => _editBookToFirebase(this);

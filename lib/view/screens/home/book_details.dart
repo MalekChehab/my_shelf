@@ -108,6 +108,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                       buttonLabel: 'Delete',
                                       onPressed: () => deleteBook(),
                                       title: 'Are you sure you want to delete this book?',
+                                      dialogHeight: 50,
                                     ),
                             );
                             break;

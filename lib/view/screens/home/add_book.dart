@@ -47,7 +47,7 @@ class AddBookState extends ConsumerState<AddBook> {
   late TextEditingController _edition;
   late TextEditingController _editionDate;
   bool _imageTaken = false;
-  late File _imageFile = File('no file');
+  late File _imageFile = File('no image');
   final picker = ImagePicker();
   late bool _isLoading = false;
   late var _db;
@@ -384,7 +384,7 @@ class AddBookState extends ConsumerState<AddBook> {
   }
 
   Widget coverFormField(BuildContext context) {
-    return _imageTaken
+    return _imageTaken == true && _imageFile.path != 'no image'
         ? GestureDetector(
             child: Container(
               height:
@@ -582,21 +582,44 @@ class AddBookState extends ConsumerState<AddBook> {
   }
 
   _imgFromCamera() async {
-    final pickedFile = await picker.pickImage(source: ImageSource.camera,);
-    _cropImage(pickedFile!.path);
-    setState(() {
-      // _imageFile = File(pickedFile!.path);
-      _imageTaken = true;
-    });
+    final pickedFile = await picker.pickImage(
+      maxHeight: 800,
+      maxWidth: 600,
+      source: ImageSource.camera,
+    ).then((value) =>
+      _cropImage(value!.path).whenComplete(() {
+        setState(() {
+          _imageTaken = true;
+        });
+      })
+      // setState((){
+      //   _imageTaken = true;
+      // });
+    );
+    // _cropImage(pickedFile!.path);
+    // setState(() {
+    //   // _imageFile = File(pickedFile!.path);
+    //   _imageTaken = true;
+    // });
   }
 
   _imgFromGallery() async {
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery,);
-    _cropImage(pickedFile!.path);
-    setState(() {
-      // _imageFile = File(pickedFile!.path);
-      _imageTaken = true;
-    });
+    final pickedFile = await picker.pickImage(
+      maxHeight: 800,
+      maxWidth: 600,
+      source: ImageSource.gallery,
+    ).then((value) =>
+        _cropImage(value!.path).whenComplete(() {
+          setState(() {
+            _imageTaken = true;
+          });
+        })
+    );
+    // _cropImage(pickedFile!.path);
+    // setState(() {
+    //   // _imageFile = File(pickedFile!.path);
+    //   _imageTaken = true;
+    // });
   }
 
   Future<void> _cropImage(String path) async {
@@ -650,37 +673,61 @@ class AddBookState extends ConsumerState<AddBook> {
           return SizedBox(
             // height: _height / 4,
             child: SafeArea(
-              child: Wrap(
-                children: [
-                  Padding(
-                    padding:
-                        const EdgeInsets.only(top: 19.0, left: 8, bottom: 8),
-                    child: ListTile(
-                      leading: const Icon(Icons.photo_library_rounded),
-                      title: const Text('Gallery'),
-                      onTap: () {
-                        _imgFromGallery();
+              child: Padding(
+                padding: const EdgeInsets.only(top:18.0),
+                child: Wrap(
+                  children: [
+                    widget.book != null && widget.book!.coverUrl.toString() != ''
+                        ? Padding(
+                      padding: const EdgeInsets.only( left: 8, bottom: 8),
+                      child: ListTile(
+                        leading: const Icon(Icons.clear_rounded),
+                        title: const Text('Remove Image'),
+                        onTap: () {
+                          setState(() {
+                            _imageFile = File('delete image');
+                            _imageTaken = false;
+                            widget.book!.coverUrl = "";
+                          });
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ):const SizedBox(),
+                    Padding(
+                      padding:
+                          const EdgeInsets.only( left: 8, bottom: 8),
+                      child: ListTile(
+                        leading: const Icon(Icons.photo_library_rounded),
+                        title: const Text('Gallery'),
+                        onTap: () {
+                          _imgFromGallery();
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                    SizedBox(height: _height / 10),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: ListTile(
+                        leading: const Icon(Icons.photo_camera_rounded),
+                        title: const Text('Camera'),
+                        onTap: () {
+                          _imgFromCamera();
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
 
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ),
-                  SizedBox(height: _height / 10),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ListTile(
-                      leading: const Icon(Icons.photo_camera_rounded),
-                      title: const Text('Camera'),
-                      onTap: () {
-                        _imgFromCamera();
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
         });
+  }
+
+  @override
+  void dispose(){
+    super.dispose();
   }
 }

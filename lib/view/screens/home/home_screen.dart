@@ -117,7 +117,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                   titleTextStyle: Theme.of(context).textTheme.bodyText1,
                   backgroundColor: Theme.of(context).primaryColor,
                   elevation: 20,
-                  title: const Text('My Shelf'),
+                  title: Text(_auth.userExist() ? _auth.getUserName().toString() + "'s Shelf" : 'My Shelf'),
                   pinned: true,
                   floating: true,
                 ),
@@ -125,8 +125,12 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             },
             body: Column(
               children: [
-                // _booksList.value!.isNotEmpty ? Text(_auth.userExist() ? _auth.getUserName().toString() : '')
-                // : const SizedBox(),
+                _booksList.value != null ?
+                _booksList.value!.isNotEmpty ?
+                Text(_auth.userExist() ? _auth.getUserName().toString()
+                        : '')
+                : const SizedBox()
+                : const SizedBox(),
                 Expanded(
                   child: Center(
                     child: _booksList.when(
@@ -145,7 +149,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                                   padding: const EdgeInsets.only(
                                       bottom: 40,
                                       right: 10.0,
-                                      left: 20
+                                      left: 20,
                                   ),
                                   child: Image.asset(
                                     'assets/images/home.png',

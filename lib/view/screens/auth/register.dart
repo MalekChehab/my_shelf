@@ -150,6 +150,7 @@ class RegisterState extends ConsumerState<Register> {
       textEditingController: _name,
       keyboardType: TextInputType.text,
       icon: Icons.person_outline_rounded,
+      capitalization: TextCapitalization.words,
       validator: (dynamic value) => value.isEmpty ? 'Enter a name' : null,
     );
   }
@@ -274,7 +275,7 @@ class RegisterState extends ConsumerState<Register> {
             bool _signedIn = await _auth.googleSignIn();
             if (_signedIn) {
               _auth.getCurrentUser().updateDisplayName(_auth.getUserName());
-              _db.updateUser(_auth.getUserName(), _auth.getUserId().toString());
+              _db.updateUser(name: _auth.getUserName(), uid: _auth.getUserId().toString());
               setState(() {
                 _isLoading = false;
               });
