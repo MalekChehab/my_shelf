@@ -28,34 +28,32 @@ class BookItem extends StatelessWidget {
             Flexible(
               fit: FlexFit.tight,
               flex: 4,
-              child: Hero(
-                tag: "SelectedBook-${_book.id}",
-                transitionOnUserGestures: true,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 10.0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child:
-                    _book.coverUrl == "" ? const Placeholder()
-                        :
-                    // FadeInImage.memoryNetwork(
-                    //   placeholder: kTransparentImage,
-                    //   image: _book!.coverUrl.toString(),
-                    //   fit: BoxFit.cover,
-                    // ),
-                    // CachedNetworkImage(
-                    //   imageUrl: _book.coverUrl.toString(),
-                    //   fit: BoxFit.cover,
-                    //   placeholder: (context, url) => Image.asset('assets/images/home.png'),
-                    // ),
-                    AspectRatio(
-                      aspectRatio: 0.6,
-                      child: OctoImage(
-                        image: CachedNetworkImageProvider(_book.coverUrl.toString()), // posts is the list of document snapshots
-                        placeholderBuilder: OctoPlaceholder.blurHash(_book.blurHash.toString()),
-                        errorBuilder: OctoError.icon(color: Colors.red),
-                        fit: BoxFit.cover,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 10.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child:
+                  _book.coverUrl == "" ? const Placeholder()
+                      :
+                  // FadeInImage.memoryNetwork(
+                  //   placeholder: kTransparentImage,
+                  //   image: _book!.coverUrl.toString(),
+                  //   fit: BoxFit.cover,
+                  // ),
+                  // CachedNetworkImage(
+                  //   imageUrl: _book.coverUrl.toString(),
+                  //   fit: BoxFit.cover,
+                  //   placeholder: (context, url) => Image.asset('assets/images/home.png'),
+                  // ),
+                  AspectRatio(
+                    aspectRatio: 0.6,
+                    child: OctoImage(
+                      image: CachedNetworkImageProvider(
+                          _book.coverUrl.toString()
                       ),
+                      placeholderBuilder: OctoPlaceholder.blurHash(_book.blurHash.toString()),
+                      errorBuilder: OctoError.icon(color: Colors.red),
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),

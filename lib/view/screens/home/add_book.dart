@@ -583,8 +583,8 @@ class AddBookState extends ConsumerState<AddBook> {
 
   _imgFromCamera() async {
     final pickedFile = await picker.pickImage(
-      maxHeight: 800,
-      maxWidth: 600,
+      maxHeight: 1200,
+      maxWidth: 1000,
       source: ImageSource.camera,
     ).then((value) =>
       _cropImage(value!.path).whenComplete(() {
@@ -592,21 +592,13 @@ class AddBookState extends ConsumerState<AddBook> {
           _imageTaken = true;
         });
       })
-      // setState((){
-      //   _imageTaken = true;
-      // });
     );
-    // _cropImage(pickedFile!.path);
-    // setState(() {
-    //   // _imageFile = File(pickedFile!.path);
-    //   _imageTaken = true;
-    // });
   }
 
   _imgFromGallery() async {
     final pickedFile = await picker.pickImage(
-      maxHeight: 800,
-      maxWidth: 600,
+      maxHeight: 1200,
+      maxWidth: 1000,
       source: ImageSource.gallery,
     ).then((value) =>
         _cropImage(value!.path).whenComplete(() {
@@ -615,11 +607,6 @@ class AddBookState extends ConsumerState<AddBook> {
           });
         })
     );
-    // _cropImage(pickedFile!.path);
-    // setState(() {
-    //   // _imageFile = File(pickedFile!.path);
-    //   _imageTaken = true;
-    // });
   }
 
   Future<void> _cropImage(String path) async {

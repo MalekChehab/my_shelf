@@ -9,58 +9,63 @@ import 'package:my_library/view/screens/home/settings_screen.dart';
 import 'package:my_library/view/screens/home/wish_list_screen.dart';
 import 'package:my_library/view/widgets/book_list.dart';
 
-// class BookSearch extends SearchDelegate<Book> {
-//   @override
-//   ThemeData appBarTheme(BuildContext context) {
-//     return Theme.of(context);
-//   }
-//
-//   @override
-//   List<Widget> buildActions(BuildContext context) {
-//     return [
-//       IconButton(
-//         icon: Icon(Icons.clear),
-//         color: Theme.of(context).iconTheme.color,
-//         onPressed: () => query = '',
-//       )
-//     ];
-//   }
-//
-//   @override
-//   Widget buildLeading(BuildContext context) {
-//     return IconButton(
-//       icon: Icon(Icons.arrow_back),
-//       color: Theme.of(context).iconTheme.color,
-//       onPressed: () => Navigator.of(context).pop(),
-//     );
-//   }
-//
-//   @override
-//   Widget buildResults(BuildContext context) {
-//     final books = Provider.of<BookNotifier>(context).books;
-//
-//     final results = books
-//         .where((book) =>
-//     book.title.toLowerCase().contains(query) ||
-//         book.author.toLowerCase().contains(query))
-//         .toList();
-//
-//     return BookList(books: results);
-//   }
-//
-//   @override
-//   Widget buildSuggestions(BuildContext context) {
-//     final books = Provider.of<BookNotifier>(context).books;
-//
-//     final results = books
-//         .where((book) =>
-//     book.title.toLowerCase().contains(query) ||
-//         book.author.toLowerCase().contains(query))
-//         .toList();
-//
-//     return BookList(books: results);
-//   }
-// }
+
+class BookSearch extends SearchDelegate<String> {
+
+  @override
+  List<Widget> buildActions(BuildContext context) => [
+    IconButton(
+      icon: const Icon(Icons.clear),
+      onPressed: () {
+        if (query.isEmpty) {
+          Navigator.of(context).pop();
+        } else {
+          query = '';
+          showSuggestions(context);
+        }
+      },
+    )
+  ];
+
+  @override
+  Widget buildLeading(BuildContext context) => IconButton(
+    icon: const Icon(Icons.arrow_back),
+    onPressed: () => Navigator.of(context).pop(),
+  );
+
+  @override
+  Widget buildResults(BuildContext context) => Center(
+    child: HookConsumer(
+      builder: (BuildContext context, WidgetRef ref, Widget? child) {
+        final results = ref.watch(allBooksProvider).asData;
+        return BookList(results!.value.where((book) =>
+        book.title.contains(query)
+            || book.title.toLowerCase().contains(query)
+            || book.author.any(
+                (author) => author.contains(query) || author.toLowerCase().contains(query))
+        ).toList());
+      },
+    ),
+  );
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    return HookConsumer(
+      builder: (BuildContext context, WidgetRef ref, Widget? child) {
+        final results = ref.watch(allBooksProvider).asData;
+        if(query.isNotEmpty) {
+          return BookList(results!.value.where((book) =>
+          book.title.contains(query)
+              || book.title.toLowerCase().contains(query)
+              || book.author.any(
+                  (author) => author.contains(query) || author.toLowerCase().contains(query))
+          ).toList());
+        }
+        return BookList(results!.value);
+      },
+    );
+  }
+}
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -92,32 +97,29 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                 SliverAppBar(
                   automaticallyImplyLeading: false,
                   actions: [
-                    IconButton(icon: const Icon(Icons.search), onPressed: () {}
-                        //   showSearch(context: context, delegate: BookSearch());
-                        // },
+                    IconButton(icon: const Icon(Icons.search), onPressed: () {
+                          showSearch(context: context, delegate: BookSearch());
+                        },
                         ),
                     IconButton(
                       tooltip: 'Settings',
                       icon: const Icon(Icons.settings_rounded),
-                      onPressed: () async {
-                        // bool signedOut = await _auth.signOut();
-                        // if (signedOut) {
-                        //   Navigator.pushAndRemoveUntil(
-                        //       context,
-                        //       MaterialPageRoute(
-                        //           builder: (_) => const WelcomeScreen()),
-                        //       (route) => false);
-
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (_) => const SettingsScreen()
-                        ));
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const SettingsScreen()));
                       },
                     ),
                   ],
                   titleTextStyle: Theme.of(context).textTheme.bodyText1,
                   backgroundColor: Theme.of(context).primaryColor,
                   elevation: 20,
-                  title: Text(_auth.userExist() ? _auth.getUserName().toString() + "'s Shelf" : 'My Shelf'),
+                  title: Text(_auth.userExist()
+                      ? _auth.getUserName().toString().endsWith('s') || _auth.getUserName().toString().endsWith('S')
+                      ? _auth.getUserName().toString() + "' Shelf"
+                      : _auth.getUserName().toString() + "'s Shelf"
+                      : 'My Shelf'),
                   pinned: true,
                   floating: true,
                 ),
@@ -125,12 +127,13 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             },
             body: Column(
               children: [
-                _booksList.value != null ?
-                _booksList.value!.isNotEmpty ?
-                Text(_auth.userExist() ? _auth.getUserName().toString()
-                        : '')
-                : const SizedBox()
-                : const SizedBox(),
+                _booksList.value != null
+                    ? _booksList.value!.isNotEmpty
+                        ? Text(_auth.userExist()
+                            ? _auth.getUserName().toString()
+                            : '')
+                        : const SizedBox()
+                    : const SizedBox(),
                 Expanded(
                   child: Center(
                     child: _booksList.when(
@@ -147,9 +150,9 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                           child: books.isEmpty
                               ? Padding(
                                   padding: const EdgeInsets.only(
-                                      bottom: 40,
-                                      right: 10.0,
-                                      left: 20,
+                                    bottom: 40,
+                                    right: 10.0,
+                                    left: 20,
                                   ),
                                   child: Image.asset(
                                     'assets/images/home.png',

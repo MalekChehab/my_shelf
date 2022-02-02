@@ -56,7 +56,7 @@ dependencies:
   settings_ui:
   blurhash:
   octo_image:
-  curved_navigation_bar: ^1.0.1
+  photo_view:
 
 
 

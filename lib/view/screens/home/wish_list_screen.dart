@@ -29,10 +29,10 @@ class _WishListScreenState extends State<WishListScreen> {
                 SliverAppBar(
                   automaticallyImplyLeading: false,
                   actions: [
-                    IconButton(icon: const Icon(Icons.search), onPressed: () {}
-                      //   showSearch(context: context, delegate: BookSearch());
-                      // },
-                    ),
+                    // IconButton(icon: const Icon(Icons.search), onPressed: () {}
+                    //   //   showSearch(context: context, delegate: BookSearch());
+                    //   // },
+                    // ),
                     IconButton(
                       tooltip: 'Settings',
                       icon: const Icon(Icons.settings_rounded),
