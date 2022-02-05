@@ -113,8 +113,8 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ],
                   titleTextStyle: Theme.of(context).textTheme.bodyText1,
-                  backgroundColor: Theme.of(context).primaryColor,
-                  elevation: 20,
+                  backgroundColor: Theme.of(context).appBarTheme.color,
+                  elevation: 15,
                   title: Text(_auth.userExist()
                       ? _auth.getUserName().toString().endsWith('s') || _auth.getUserName().toString().endsWith('S')
                       ? _auth.getUserName().toString() + "' Shelf"

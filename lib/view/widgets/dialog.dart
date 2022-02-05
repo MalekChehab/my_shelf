@@ -85,7 +85,7 @@ class MyDialog extends StatelessWidget {
               child: textField,
             ),
             const SizedBox(
-              height: 10,
+              height: 20,
             ),
           ],
         ),

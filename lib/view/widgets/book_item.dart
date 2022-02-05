@@ -82,7 +82,7 @@ class BookItem extends StatelessWidget {
                       children: <Widget>[
                         Text(
                           _book.title,
-                          style: Theme.of(context).textTheme.bodyText1,
+                          style: Theme.of(context).textTheme.headline3,
                         ),
                         Padding(
                           padding: const EdgeInsets.only(top: 10.0),

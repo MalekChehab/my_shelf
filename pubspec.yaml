@@ -53,11 +53,11 @@ dependencies:
   intl:
   flutter_localizations:
     sdk: flutter
-  settings_ui:
   blurhash:
   octo_image:
   photo_view:
-
+  shared_preferences:
+  day_night_switcher:
 
 
   # The following adds the Cupertino Icons font to your application.
