@@ -127,13 +127,13 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
             },
             body: Column(
               children: [
-                _booksList.value != null
-                    ? _booksList.value!.isNotEmpty
-                        ? Text(_auth.userExist()
-                            ? _auth.getUserName().toString()
-                            : '')
-                        : const SizedBox()
-                    : const SizedBox(),
+                // _booksList.value != null
+                //     ? _booksList.value!.isNotEmpty
+                //         ? Text(_auth.userExist()
+                //             ? _auth.getUserName().toString()
+                //             : '')
+                //         : const SizedBox()
+                //     : const SizedBox(),
                 Expanded(
                   child: Center(
                     child: _booksList.when(

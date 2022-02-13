@@ -1,7 +1,9 @@
+import 'dart:typed_data';
+import 'package:blurhash/blurhash.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:my_library/models/book.dart';
 import 'package:my_library/view/screens/home/book_details.dart';
-import 'package:transparent_image/transparent_image.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:octo_image/octo_image.dart';
 
@@ -63,15 +65,6 @@ class BookItem extends StatelessWidget {
             Flexible(
               flex: 6,
               child: Container(
-                // decoration:
-                // BoxDecoration(
-                //   border: Border(
-                //     right: BorderSide(
-                //       width: 4.0,
-                //       color: Theme.of(context).accentColor,
-                //     ),
-                //   ),
-                // ),
                 padding: const EdgeInsets.fromLTRB(15.0, 1.0, 0.0, 1.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,

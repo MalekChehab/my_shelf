@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:my_library/models/book.dart';
 import 'package:my_library/models/shelf.dart';
 import 'package:my_library/services/custom_exception.dart';
@@ -82,7 +82,7 @@ class FirebaseDatabase {
     return exist;
   }
 
-  Future<bool> addBook(Book book, Shelf shelf, File _imageFile) async {
+  Future<bool> addBook(Book book, Shelf shelf, XFile? _imageFile, bool kIsWeb) async {
     bool bookAdded = false;
     try {
       bool shelfExist = await checkShelf(shelf);
@@ -126,8 +126,8 @@ class FirebaseDatabase {
           "language": FieldValue.arrayUnion([book.language]),
           "total_books": FieldValue.increment(1),
         }, SetOptions(merge: true));
-        if (_imageFile.path != 'no image') {
-          uploadImageToFirebase('${doc.id}.jpg', shelf, doc.id, _imageFile);
+        if (_imageFile!.path != 'no image') {
+          uploadImageToFirebase('${doc.id}.jpg', shelf, doc.id, _imageFile, kIsWeb);
         }
         bookAdded = true;
       });
@@ -137,34 +137,57 @@ class FirebaseDatabase {
     return bookAdded;
   }
 
-  Future<String> blurHashEncode(File file) async {
-    Uint8List pixels = file.readAsBytesSync();
+  Future<String> blurHashEncode(XFile? file) async {
+    Uint8List pixels = File(file!.path).readAsBytesSync();
     String result = await blur.BlurHash.encode(pixels, 4, 3);
     return result;
   }
 
   Future uploadImageToFirebase(
-      String fileName, Shelf shelf, String bookDocId, File _imageFile) async {
+      String fileName, Shelf shelf, String bookDocId, XFile? _imageFile, bool kIsWeb) async {
     try {
-      final String blurHash = await blurHashEncode(_imageFile);
-      TaskSnapshot snapshot = await FirebaseStorage.instance
-          .ref('$uid/${shelf.id}/book_covers/$fileName')
-          .putFile(_imageFile);
-      if (snapshot.state == TaskState.success) {
-        final String downloadUrl = await snapshot.ref.getDownloadURL();
-        await _usersCollection
-            .doc(uid)
-            .collection('shelves')
-            .doc(shelf.id)
-            .collection('books')
-            .doc(bookDocId)
-            .set({
-          "cover": downloadUrl,
-          'blur_hash': blurHash,
-        }, SetOptions(merge: true));
-      } else {
-        throw ('This file is not an image');
+      late String blurHash = '';
+      // File file = File(_imageFile!.path);
+      // Uint8List data = file.readAsBytesSync();
+      // img.Image? image = img.decodeImage(data.toList());
+      // BlurHash blur = BlurHash.encode(image!, numCompX: 4, numCompY: 3);
+      // blurHash = blur.hash;
+      late String downloadUrl = '';
+      if(kIsWeb){
+        PickedFile pickedFile = PickedFile(File(_imageFile!.path).path);
+        Reference reference = FirebaseStorage.instance
+            .ref().child('$uid/${shelf.id}/book_covers/$fileName');
+        await reference.putData(
+          await pickedFile.readAsBytes(),
+          SettableMetadata(contentType: 'image/jpeg'),
+        );
+        downloadUrl = await reference.getDownloadURL();
+        // ByteData bytes = await NetworkAssetBundle(Uri.parse(downloadUrl)).load("");
+        // Uint8List pixels = bytes.buffer.asUint8List();
+        // blurHash = await blur.BlurHash.encode(pixels, 4, 3);
+        // blurHash = await blurHashEncode(_imageFile);
+        blurHash = 'LUF~U0~pE34:?w%Nj]ad?HxubcWq';
+      }else {
+        blurHash = await blurHashEncode(_imageFile);
+        TaskSnapshot snapshot = await FirebaseStorage.instance
+            .ref('$uid/${shelf.id}/book_covers/$fileName')
+            .putFile(File(_imageFile!.path));
+        if (snapshot.state == TaskState.success) {
+          downloadUrl = await snapshot.ref.getDownloadURL();
+        } else {
+          throw ('This file is not an image');
+        }
       }
+      await _usersCollection
+          .doc(uid)
+          .collection('shelves')
+          .doc(shelf.id)
+          .collection('books')
+          .doc(bookDocId)
+          .set({
+        "cover": downloadUrl,
+        'blur_hash': blurHash,
+      }, SetOptions(merge: true));
     } on FirebaseException catch (e) {
       throw CustomException(message: e.message);
     }
@@ -251,7 +274,7 @@ class FirebaseDatabase {
     return bookDeleted;
   }
 
-  Future<bool> editBook(Book newBook, Shelf shelf, File _imageFile) async {
+  Future<bool> editBook(Book newBook, Shelf shelf, XFile? _imageFile, bool kIsWeb) async {
     bool bookEdited = false;
     try {
       await _usersCollection
@@ -269,9 +292,9 @@ class FirebaseDatabase {
           "publisher": FieldValue.arrayUnion([newBook.publisher]),
           "language": FieldValue.arrayUnion([newBook.language]),
         }, SetOptions(merge: true));
-        if (_imageFile.path != 'no image' && _imageFile.path != 'delete image') { //if user took a new image
+        if (_imageFile!.path != 'no image' && _imageFile.path != 'delete image') { //if user took a new image
           uploadImageToFirebase( //upload image to firebase
-              '${newBook.id}.jpg', shelf, newBook.id.toString(), _imageFile);
+              '${newBook.id}.jpg', shelf, newBook.id.toString(), _imageFile, kIsWeb);
         }
         else if(_imageFile.path == 'delete image') {// if user removed the image
           Reference ref = FirebaseStorage.instance

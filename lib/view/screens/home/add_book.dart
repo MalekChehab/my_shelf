@@ -14,6 +14,9 @@ import 'package:flutter/material.dart';
 import 'package:my_library/controllers/responsive_ui.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:permission_handler/permission_handler.dart';
+
 
 class AddBook extends ConsumerStatefulWidget {
   late Shelf? shelf;
@@ -46,8 +49,9 @@ class AddBookState extends ConsumerState<AddBook> {
   late TextEditingController _edition;
   late TextEditingController _editionDate;
   bool _imageTaken = false;
-  late File _imageFile = File('no image');
-  final picker = ImagePicker();
+  late XFile? _imageFile = XFile('no image');
+  // final picker = ImagePicker();
+  final ImagePicker _picker = ImagePicker();
   late bool _isLoading = false;
   late var _db;
   late Book newBook;
@@ -86,7 +90,7 @@ class AddBookState extends ConsumerState<AddBook> {
     if (widget.shelf == null && widget.book != null) {
       widget.shelf = widget.book!.shelf;
     }
-    // if(widget.book != null && widget.book!.coverUrl != ""){
+    // if(widget.book != null && widget.book!.coverUrl.toString() != ""){
     //   _imageTaken = true;
     // }
     super.initState();
@@ -186,7 +190,7 @@ class AddBookState extends ConsumerState<AddBook> {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(right: 3.0),
-                    child: coverFormField(context),
+                    child: coverFormField(),
                   ),
                 ),
                 Expanded(
@@ -382,61 +386,64 @@ class AddBookState extends ConsumerState<AddBook> {
     );
   }
 
-  Widget coverFormField(BuildContext context) {
-    return _imageTaken == true && _imageFile.path != 'no image'
+  Widget coverFormField(){
+    return _imageTaken == true
+    //when an image is taken
         ? GestureDetector(
-            child: Container(
-              height:
-                  _large ? _height / 5 : (_medium ? _height / 10 : _height / 7),
-              width: _large
-                  ? _width / 2
-                  : (_medium ? _width / 3.75 : _width / 3.5),
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                image: DecorationImage(
-                  image: FileImage(_imageFile),
-                ),
-              ),
-            ),
-            onTap: () => _showPicker(context),
-          )
+      child: Container(
+          height:
+          _large ? _height / 5 : (_medium ? _height / 10 : _height / 7),
+          width: _large
+              ? _width / 2
+              : (_medium ? _width / 3.75 : _width / 3.5),
+          decoration:  const BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(20.0)),
+          ),
+          child: kIsWeb ? Image.network(File(_imageFile!.path).path) : Image.file(File(_imageFile!.path))
+      ),
+      onTap: () => kIsWeb ? _editImageSelectPicker() : _mobileSelectPicker(),
+    )
         : widget.book != null && widget.book!.coverUrl.toString() != ""
-            ? GestureDetector(
-                child: Container(
-                  height: _large
-                      ? _height / 5
-                      : (_medium ? _height / 10 : _height / 7),
-                  width: _large
-                      ? _width / 2
-                      : (_medium ? _width / 3.75 : _width / 3.5),
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                    image: DecorationImage(
-                        image: NetworkImage(widget.book!.coverUrl.toString())),
-                  ),
-                ),
-                onTap: () => _showPicker(context),
-              )
-            : MyButton(
-                child: Container(
-                  height: _large
-                      ? _height / 5
-                      : (_medium ? _height / 10 : _height / 7),
-                  width: _large
-                      ? _width / 2
-                      : (_medium ? _width / 3.75 : _width / 3.5),
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(20.0)),
-                  ),
-                  child: Icon(
-                    Icons.camera_alt_outlined,
-                    color: Theme.of(context).iconTheme.color,
-                  ),
-                ),
-                color: Theme.of(context).backgroundColor,
-                elevation: _large ? 20 : (_medium ? 10 : 8),
-                onPressed: () => _showPicker(context),
-              );
+    //when there is an image from db
+        ? GestureDetector(
+      child: Container(
+        height: _large
+            ? _height / 5
+            : (_medium ? _height / 10 : _height / 7),
+        width: _large
+            ? _width / 2
+            : (_medium ? _width / 3.75 : _width / 3.5),
+        decoration: BoxDecoration(
+          borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+          image: DecorationImage(
+              image: NetworkImage(widget.book!.coverUrl.toString()),
+          ),
+        ),
+        // child: Image.network(File(widget.book!.coverUrl.toString()).path)
+      ),
+      onTap: () => _editImageSelectPicker(),
+    )
+        : MyButton(
+      //when no image
+      child: Container(
+        height: _large
+            ? _height / 5
+            : (_medium ? _height / 10 : _height / 7),
+        width: _large
+            ? _width / 2
+            : (_medium ? _width / 3.75 : _width / 3.5),
+        decoration: const BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(20.0)),
+        ),
+        child: Icon(
+          Icons.camera_alt_outlined,
+          color: Theme.of(context).iconTheme.color,
+        ),
+      ),
+      color: Theme.of(context).backgroundColor,
+      elevation: _large ? 20 : (_medium ? 10 : 8),
+      onPressed: () => kIsWeb ? _webImageFromGallery() : _mobileSelectPicker(),
+    );
   }
 
   Widget confirmButton(BuildContext context) {
@@ -493,7 +500,7 @@ class AddBookState extends ConsumerState<AddBook> {
     if (_formKey.currentState!.validate()) {
       if (widget.book == null) {
         try {
-          bool bookAdded = await _db.addBook(newBook, widget.shelf, _imageFile);
+          bool bookAdded = await _db.addBook(newBook, widget.shelf, _imageFile, kIsWeb);
           if (bookAdded) {
             ScaffoldMessenger.of(context).showMaterialBanner(
               MaterialBanner(
@@ -535,7 +542,7 @@ class AddBookState extends ConsumerState<AddBook> {
         try {
           newBook.id = widget.book!.id;
           bool bookEdited =
-              await _db.editBook(newBook, widget.shelf, _imageFile);
+              await _db.editBook(newBook, widget.shelf, _imageFile, kIsWeb);
           if (bookEdited) {
             ScaffoldMessenger.of(context).showMaterialBanner(
               MaterialBanner(
@@ -580,72 +587,72 @@ class AddBookState extends ConsumerState<AddBook> {
     }
   }
 
-  _imgFromCamera() async {
-    final pickedFile = await picker.pickImage(
-      maxHeight: 1200,
-      maxWidth: 1000,
-      source: ImageSource.camera,
-    ).then((value) =>
-      _cropImage(value!.path).whenComplete(() {
-        setState(() {
-          _imageTaken = true;
-        });
-      })
-    );
-  }
+  // _imgFromCamera() async {
+  //   final pickedFile = await picker.pickImage(
+  //     maxHeight: 1200,
+  //     maxWidth: 1000,
+  //     source: ImageSource.camera,
+  //   ).then((value) =>
+  //     _cropImage(value!.path).whenComplete(() {
+  //       setState(() {
+  //         _imageTaken = true;
+  //       });
+  //     })
+  //   );
+  // }
 
-  _imgFromGallery() async {
-    final pickedFile = await picker.pickImage(
-      maxHeight: 1200,
-      maxWidth: 1000,
-      source: ImageSource.gallery,
-    ).then((value) =>
-        _cropImage(value!.path).whenComplete(() {
-          setState(() {
-            _imageTaken = true;
-          });
-        })
-    );
-  }
+  // _imgFromGallery() async {
+  //   final pickedFile = await picker.pickImage(
+  //     maxHeight: 1200,
+  //     maxWidth: 1000,
+  //     source: ImageSource.gallery,
+  //   ).then((value) =>
+  //       _cropImage(value!.path).whenComplete(() {
+  //         setState(() {
+  //           _imageTaken = true;
+  //         });
+  //       })
+  //   );
+  // }
 
-  Future<void> _cropImage(String path) async {
-    File? croppedFile = await ImageCropper.cropImage(
-        sourcePath: path,
-        aspectRatioPresets: Platform.isAndroid
-            ? [
-          CropAspectRatioPreset.square,
-          CropAspectRatioPreset.ratio3x2,
-          CropAspectRatioPreset.original,
-          CropAspectRatioPreset.ratio4x3,
-          CropAspectRatioPreset.ratio16x9
-        ]
-            : [
-          CropAspectRatioPreset.original,
-          CropAspectRatioPreset.square,
-          CropAspectRatioPreset.ratio3x2,
-          CropAspectRatioPreset.ratio4x3,
-          CropAspectRatioPreset.ratio5x3,
-          CropAspectRatioPreset.ratio5x4,
-          CropAspectRatioPreset.ratio7x5,
-          CropAspectRatioPreset.ratio16x9
-        ],
-        androidUiSettings: AndroidUiSettings(
-            toolbarTitle: 'Cropper',
-            toolbarColor: Theme.of(context).primaryColor,
-            toolbarWidgetColor: Theme.of(context).accentColor,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: false),
-        iosUiSettings: const IOSUiSettings(
-          title: 'Cropper',
-        ));
-    if (croppedFile != null) {
-      setState(() {
-        _imageFile = croppedFile;
-      });
-    }
-  }
+  // Future<void> _cropImage(String path) async {
+  //   File? croppedFile = await ImageCropper.cropImage(
+  //       sourcePath: path,
+  //       aspectRatioPresets: Platform.isAndroid
+  //           ? [
+  //         CropAspectRatioPreset.square,
+  //         CropAspectRatioPreset.ratio3x2,
+  //         CropAspectRatioPreset.original,
+  //         CropAspectRatioPreset.ratio4x3,
+  //         CropAspectRatioPreset.ratio16x9
+  //       ]
+  //           : [
+  //         CropAspectRatioPreset.original,
+  //         CropAspectRatioPreset.square,
+  //         CropAspectRatioPreset.ratio3x2,
+  //         CropAspectRatioPreset.ratio4x3,
+  //         CropAspectRatioPreset.ratio5x3,
+  //         CropAspectRatioPreset.ratio5x4,
+  //         CropAspectRatioPreset.ratio7x5,
+  //         CropAspectRatioPreset.ratio16x9
+  //       ],
+  //       androidUiSettings: AndroidUiSettings(
+  //           toolbarTitle: 'Cropper',
+  //           toolbarColor: Theme.of(context).primaryColor,
+  //           toolbarWidgetColor: Theme.of(context).accentColor,
+  //           initAspectRatio: CropAspectRatioPreset.original,
+  //           lockAspectRatio: false),
+  //       iosUiSettings: const IOSUiSettings(
+  //         title: 'Cropper',
+  //       ));
+  //   if (croppedFile != null) {
+  //     setState(() {
+  //       _imageFile = croppedFile;
+  //     });
+  //   }
+  // }
 
-  void _showPicker(context) {
+  void _mobileSelectPicker() {
     showModalBottomSheet(
         context: context,
         backgroundColor: Theme.of(context).backgroundColor,
@@ -663,22 +670,6 @@ class AddBookState extends ConsumerState<AddBook> {
                 padding: const EdgeInsets.only(top:18.0),
                 child: Wrap(
                   children: [
-                    widget.book != null && widget.book!.coverUrl.toString() != ''
-                        ? Padding(
-                      padding: const EdgeInsets.only( left: 8, bottom: 8),
-                      child: ListTile(
-                        leading: const Icon(Icons.clear_rounded),
-                        title: const Text('Remove Image'),
-                        onTap: () {
-                          setState(() {
-                            _imageFile = File('delete image');
-                            _imageTaken = false;
-                            widget.book!.coverUrl = "";
-                          });
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ):const SizedBox(),
                     Padding(
                       padding:
                           const EdgeInsets.only( left: 8, bottom: 8),
@@ -686,24 +677,23 @@ class AddBookState extends ConsumerState<AddBook> {
                         leading: const Icon(Icons.photo_library_rounded),
                         title: const Text('Gallery'),
                         onTap: () {
-                          _imgFromGallery();
+                          _imageFromGallery();
                           Navigator.pop(context);
                         },
                       ),
                     ),
                     SizedBox(height: _height / 10),
                     Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
                       child: ListTile(
                         leading: const Icon(Icons.photo_camera_rounded),
                         title: const Text('Camera'),
                         onTap: () {
-                          _imgFromCamera();
+                          _imageFromCamera();
                           Navigator.pop(context);
                         },
                       ),
                     ),
-
                   ],
                 ),
               ),
@@ -712,8 +702,142 @@ class AddBookState extends ConsumerState<AddBook> {
         });
   }
 
-  @override
-  void dispose(){
-    super.dispose();
+  void _editImageSelectPicker() {
+    showModalBottomSheet(
+        context: context,
+        backgroundColor: Theme.of(context).backgroundColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        builder: (BuildContext bc) {
+          return SizedBox(
+            // height: _height / 4,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(top:18.0),
+                child: _imageTaken == true ||
+                    widget.book != null && widget.book!.coverUrl.toString() != ''
+                    ? Wrap(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only( left: 8, bottom: 8),
+                      child: ListTile(
+                        leading: const Icon(Icons.clear_rounded),
+                        title: const Text('Remove Image'),
+                        onTap: () {
+                          setState(() {
+                            _imageTaken = false;
+                            if(widget.book != null) {
+                              _imageFile = XFile('delete image');
+                              widget.book!.coverUrl = "";
+                            }else{
+                              _imageFile = XFile('no image');
+                            }
+                          });
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only( left: 8, bottom: 8),
+                      child: ListTile(
+                        leading: const Icon(Icons.edit_rounded),
+                        title: const Text('Change Image'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          if(kIsWeb){
+                            _webImageFromGallery();
+                          }else{
+                            _mobileSelectPicker();
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ) : const SizedBox(),
+              ),
+            ),
+          );
+        });
+  }
+
+  Future<PermissionStatus> requestPermissions() async {
+    await Permission.photos.request();
+    return Permission.photos.status;
+  }
+
+  void showToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 2,
+      backgroundColor: Theme.of(context).iconTheme.color,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
+  }
+
+  _imageFromGallery() async {
+    var permissionStatus = requestPermissions();
+
+    if (await permissionStatus.isGranted) {
+      _imageFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxHeight: 1200,
+        maxWidth: 1000,
+      );
+
+      if (_imageFile != null) {
+        setState(() {
+          // _imageFile = File(image.path);
+          _imageTaken = true;
+        });
+      } else {
+        showToast("No file selected");
+      }
+    } else {
+
+      showToast("Permission not granted");
+    }
+  }
+
+  _imageFromCamera() async {
+    var permissionStatus = requestPermissions();
+
+    if (await permissionStatus.isGranted) {
+      _imageFile = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxHeight: 1200,
+        maxWidth: 1000,
+      );
+
+      if (_imageFile != null) {
+        setState(() {
+          // _imageFile = File(image.path);
+          _imageTaken = true;
+        });
+      } else {
+        showToast("No file selected");
+      }
+    } else {
+      showToast("Permission not granted");
+    }
+  }
+
+  _webImageFromGallery() async {
+    _imageFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxHeight: 1200,
+      maxWidth: 1000,
+    );
+    if (_imageFile != null) {
+      setState(() {
+        _imageTaken = true;
+      });
+    }
   }
 }

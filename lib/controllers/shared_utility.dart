@@ -21,7 +21,7 @@ class SharedUtility {
   final SharedPreferences sharedPreferences;
 
   bool isDarkModeEnabled() {
-    return sharedPreferences.getBool('isDarkModeEnabled') ?? false;
+    return sharedPreferences.getBool('isDarkModeEnabled') ?? true;
   }
 
   Future<bool> setDarkModeEnabled(bool value) async {

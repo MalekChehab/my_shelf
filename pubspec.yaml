@@ -58,6 +58,7 @@ dependencies:
   photo_view:
   shared_preferences:
   day_night_switcher:
+  permission_handler:
 
 
   # The following adds the Cupertino Icons font to your application.
