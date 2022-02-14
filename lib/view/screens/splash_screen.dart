@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:my_library/services/general_providers.dart';
@@ -23,7 +21,8 @@ class SplashScreenState extends ConsumerState<SplashScreen> {
       Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) =>
-            _authState == null ? const WelcomeScreen() : const HomeScreen()),
+            _authState == null ?
+            const WelcomeScreen() : const HomeScreen()),
           );
     });
     return Scaffold(

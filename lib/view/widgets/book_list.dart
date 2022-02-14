@@ -9,7 +9,9 @@ class BookList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
+    double _width = MediaQuery.of(context).size.width;
+    return _width <= 500
+        ? ListView.separated(
       physics: const BouncingScrollPhysics(),
       separatorBuilder: ((context, index) {
         return Container(
@@ -24,6 +26,13 @@ class BookList extends StatelessWidget {
       itemBuilder: ((context, index) {
         return BookItem(_books.elementAt(index));
       }),
+    )
+        : GridView.count(
+        crossAxisCount: _width < 800 ? 2 : _width < 1000 ? 3 : 4 ,
+      childAspectRatio: 1,
+        children: List<Widget>.generate(
+            _books.length, (index) => BookItem(_books.elementAt(index))
+        ),
     );
   }
 }

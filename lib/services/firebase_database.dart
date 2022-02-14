@@ -147,11 +147,6 @@ class FirebaseDatabase {
       String fileName, Shelf shelf, String bookDocId, XFile? _imageFile, bool kIsWeb) async {
     try {
       late String blurHash = '';
-      // File file = File(_imageFile!.path);
-      // Uint8List data = file.readAsBytesSync();
-      // img.Image? image = img.decodeImage(data.toList());
-      // BlurHash blur = BlurHash.encode(image!, numCompX: 4, numCompY: 3);
-      // blurHash = blur.hash;
       late String downloadUrl = '';
       if(kIsWeb){
         PickedFile pickedFile = PickedFile(File(_imageFile!.path).path);
@@ -162,10 +157,6 @@ class FirebaseDatabase {
           SettableMetadata(contentType: 'image/jpeg'),
         );
         downloadUrl = await reference.getDownloadURL();
-        // ByteData bytes = await NetworkAssetBundle(Uri.parse(downloadUrl)).load("");
-        // Uint8List pixels = bytes.buffer.asUint8List();
-        // blurHash = await blur.BlurHash.encode(pixels, 4, 3);
-        // blurHash = await blurHashEncode(_imageFile);
         blurHash = 'LUF~U0~pE34:?w%Nj]ad?HxubcWq';
       }else {
         blurHash = await blurHashEncode(_imageFile);
