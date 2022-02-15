@@ -100,7 +100,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
                     IconButton(icon: const Icon(Icons.search), onPressed: () {
                           showSearch(context: context, delegate: BookSearch());
                         },
-                        ),
+                    ),
                     IconButton(
                       tooltip: 'Settings',
                       icon: const Icon(Icons.settings_rounded),

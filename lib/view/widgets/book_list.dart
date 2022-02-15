@@ -28,7 +28,7 @@ class BookList extends StatelessWidget {
       }),
     )
         : GridView.count(
-        crossAxisCount: _width < 800 ? 2 : _width < 1000 ? 3 : 4 ,
+        crossAxisCount: _width < 850 ? 2 : _width < 1100 ? 3 : 4 ,
       childAspectRatio: 1,
         children: List<Widget>.generate(
             _books.length, (index) => BookItem(_books.elementAt(index))

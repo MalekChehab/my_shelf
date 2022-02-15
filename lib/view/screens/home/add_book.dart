@@ -50,10 +50,9 @@ class AddBookState extends ConsumerState<AddBook> {
   late TextEditingController _editionDate;
   bool _imageTaken = false;
   late XFile? _imageFile = XFile('no image');
-  // final picker = ImagePicker();
   final ImagePicker _picker = ImagePicker();
   late bool _isLoading = false;
-  late var _db;
+  late dynamic _db;
   late Book newBook;
 
   @override
@@ -387,25 +386,9 @@ class AddBookState extends ConsumerState<AddBook> {
   }
 
   Widget coverFormField(){
-    return _imageTaken == true
-    //when an image is taken
-        ? GestureDetector(
-      child: Container(
-          height:
-          _large ? _height / 5 : (_medium ? _height / 10 : _height / 7),
-          width: _large
-              ? _width / 2
-              : (_medium ? _width / 3.75 : _width / 3.5),
-          decoration:  const BoxDecoration(
-            borderRadius: BorderRadius.all(Radius.circular(20.0)),
-          ),
-          child: kIsWeb ? Image.network(File(_imageFile!.path).path) : Image.file(File(_imageFile!.path))
-      ),
-      onTap: () => kIsWeb ? _editImageSelectPicker() : _mobileSelectPicker(),
-    )
-        : widget.book != null && widget.book!.coverUrl.toString() != ""
-    //when there is an image from db
-        ? GestureDetector(
+    return _imageTaken == true || widget.book != null && widget.book!.coverUrl.toString() != ""
+    //when an image is taken or in edit mode and image exist
+    ? GestureDetector(
       child: Container(
         height: _large
             ? _height / 5
@@ -413,13 +396,13 @@ class AddBookState extends ConsumerState<AddBook> {
         width: _large
             ? _width / 2
             : (_medium ? _width / 3.75 : _width / 3.5),
-        decoration: BoxDecoration(
-          borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-          image: DecorationImage(
-              image: NetworkImage(widget.book!.coverUrl.toString()),
-          ),
+        decoration: const BoxDecoration(
+          borderRadius: BorderRadius.all(Radius.circular(20.0)),
         ),
-        // child: Image.network(File(widget.book!.coverUrl.toString()).path)
+        child: _imageTaken == false ?
+        Image.network(widget.book!.coverUrl.toString())
+            : kIsWeb ?
+        Image.network(_imageFile!.path) : Image.file(File(_imageFile!.path))
       ),
       onTap: () => _editImageSelectPicker(),
     )
@@ -467,10 +450,7 @@ class AddBookState extends ConsumerState<AddBook> {
         elevation: _large ? 12 : (_medium ? 10 : 8),
         onPressed: () async {
           widget.shelf == null
-              ? Fluttertoast.showToast(
-                  msg: 'Please select a shelf',
-                  toastLength: Toast.LENGTH_LONG,
-                )
+              ? showToast('Please select a shelf')
               : uploadData();
         });
   }
@@ -500,7 +480,7 @@ class AddBookState extends ConsumerState<AddBook> {
     if (_formKey.currentState!.validate()) {
       if (widget.book == null) {
         try {
-          bool bookAdded = await _db.addBook(newBook, widget.shelf, _imageFile, kIsWeb);
+          bool bookAdded = await _db.addBook(newBook, widget.shelf!, _imageFile, kIsWeb);
           if (bookAdded) {
             ScaffoldMessenger.of(context).showMaterialBanner(
               MaterialBanner(
@@ -533,16 +513,13 @@ class AddBookState extends ConsumerState<AddBook> {
           setState(() {
             _isLoading = false;
           });
-          Fluttertoast.showToast(
-            msg: e.message.toString(),
-            toastLength: Toast.LENGTH_LONG,
-          );
+          showToast(e.message.toString());
         }
       } else {
         try {
           newBook.id = widget.book!.id;
           bool bookEdited =
-              await _db.editBook(newBook, widget.shelf, _imageFile, kIsWeb);
+              await _db.editBook(newBook, widget.shelf!, _imageFile, kIsWeb);
           if (bookEdited) {
             ScaffoldMessenger.of(context).showMaterialBanner(
               MaterialBanner(
@@ -578,79 +555,11 @@ class AddBookState extends ConsumerState<AddBook> {
           setState(() {
             _isLoading = false;
           });
-          Fluttertoast.showToast(
-            msg: e.message.toString(),
-            toastLength: Toast.LENGTH_LONG,
-          );
+          showToast(e.message.toString());
         }
       }
     }
   }
-
-  // _imgFromCamera() async {
-  //   final pickedFile = await picker.pickImage(
-  //     maxHeight: 1200,
-  //     maxWidth: 1000,
-  //     source: ImageSource.camera,
-  //   ).then((value) =>
-  //     _cropImage(value!.path).whenComplete(() {
-  //       setState(() {
-  //         _imageTaken = true;
-  //       });
-  //     })
-  //   );
-  // }
-
-  // _imgFromGallery() async {
-  //   final pickedFile = await picker.pickImage(
-  //     maxHeight: 1200,
-  //     maxWidth: 1000,
-  //     source: ImageSource.gallery,
-  //   ).then((value) =>
-  //       _cropImage(value!.path).whenComplete(() {
-  //         setState(() {
-  //           _imageTaken = true;
-  //         });
-  //       })
-  //   );
-  // }
-
-  // Future<void> _cropImage(String path) async {
-  //   File? croppedFile = await ImageCropper.cropImage(
-  //       sourcePath: path,
-  //       aspectRatioPresets: Platform.isAndroid
-  //           ? [
-  //         CropAspectRatioPreset.square,
-  //         CropAspectRatioPreset.ratio3x2,
-  //         CropAspectRatioPreset.original,
-  //         CropAspectRatioPreset.ratio4x3,
-  //         CropAspectRatioPreset.ratio16x9
-  //       ]
-  //           : [
-  //         CropAspectRatioPreset.original,
-  //         CropAspectRatioPreset.square,
-  //         CropAspectRatioPreset.ratio3x2,
-  //         CropAspectRatioPreset.ratio4x3,
-  //         CropAspectRatioPreset.ratio5x3,
-  //         CropAspectRatioPreset.ratio5x4,
-  //         CropAspectRatioPreset.ratio7x5,
-  //         CropAspectRatioPreset.ratio16x9
-  //       ],
-  //       androidUiSettings: AndroidUiSettings(
-  //           toolbarTitle: 'Cropper',
-  //           toolbarColor: Theme.of(context).primaryColor,
-  //           toolbarWidgetColor: Theme.of(context).accentColor,
-  //           initAspectRatio: CropAspectRatioPreset.original,
-  //           lockAspectRatio: false),
-  //       iosUiSettings: const IOSUiSettings(
-  //         title: 'Cropper',
-  //       ));
-  //   if (croppedFile != null) {
-  //     setState(() {
-  //       _imageFile = croppedFile;
-  //     });
-  //   }
-  // }
 
   void _mobileSelectPicker() {
     showModalBottomSheet(
@@ -714,13 +623,10 @@ class AddBookState extends ConsumerState<AddBook> {
         ),
         builder: (BuildContext bc) {
           return SizedBox(
-            // height: _height / 4,
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.only(top:18.0),
-                child: _imageTaken == true ||
-                    widget.book != null && widget.book!.coverUrl.toString() != ''
-                    ? Wrap(
+                child: Wrap(
                   children: [
                     Padding(
                       padding: const EdgeInsets.only( left: 8, bottom: 8),
@@ -757,7 +663,7 @@ class AddBookState extends ConsumerState<AddBook> {
                       ),
                     ),
                   ],
-                ) : const SizedBox(),
+                ),
               ),
             ),
           );
@@ -767,18 +673,6 @@ class AddBookState extends ConsumerState<AddBook> {
   Future<PermissionStatus> requestPermissions() async {
     await Permission.photos.request();
     return Permission.photos.status;
-  }
-
-  void showToast(String message) {
-    Fluttertoast.showToast(
-      msg: message,
-      toastLength: Toast.LENGTH_LONG,
-      gravity: ToastGravity.BOTTOM,
-      timeInSecForIosWeb: 2,
-      backgroundColor: Theme.of(context).iconTheme.color,
-      textColor: Colors.white,
-      fontSize: 16.0,
-    );
   }
 
   _imageFromGallery() async {
@@ -792,10 +686,12 @@ class AddBookState extends ConsumerState<AddBook> {
       );
 
       if (_imageFile != null) {
-        setState(() {
-          // _imageFile = File(image.path);
-          _imageTaken = true;
-        });
+        _cropImage(_imageFile!.path)
+            .whenComplete(
+                () => setState((){
+              _imageTaken = true;
+            })
+        );
       } else {
         showToast("No file selected");
       }
@@ -814,17 +710,55 @@ class AddBookState extends ConsumerState<AddBook> {
         maxHeight: 1200,
         maxWidth: 1000,
       );
-
       if (_imageFile != null) {
-        setState(() {
-          // _imageFile = File(image.path);
-          _imageTaken = true;
-        });
+        _cropImage(_imageFile!.path)
+            .whenComplete(
+                () => setState((){
+                  _imageTaken = true;
+                })
+        );
       } else {
         showToast("No file selected");
       }
     } else {
       showToast("Permission not granted");
+    }
+  }
+
+  Future<void> _cropImage(String path) async {
+    File? croppedFile = await ImageCropper.cropImage(
+        sourcePath: path,
+        aspectRatioPresets: Platform.isAndroid
+            ? [
+          CropAspectRatioPreset.square,
+          CropAspectRatioPreset.ratio3x2,
+          CropAspectRatioPreset.original,
+          CropAspectRatioPreset.ratio4x3,
+          CropAspectRatioPreset.ratio16x9
+        ]
+            : [
+          CropAspectRatioPreset.original,
+          CropAspectRatioPreset.square,
+          CropAspectRatioPreset.ratio3x2,
+          CropAspectRatioPreset.ratio4x3,
+          CropAspectRatioPreset.ratio5x3,
+          CropAspectRatioPreset.ratio5x4,
+          CropAspectRatioPreset.ratio7x5,
+          CropAspectRatioPreset.ratio16x9
+        ],
+        androidUiSettings: AndroidUiSettings(
+            toolbarTitle: 'Cropper',
+            toolbarColor: Theme.of(context).primaryColor,
+            toolbarWidgetColor: Theme.of(context).accentColor,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: false),
+        iosUiSettings: const IOSUiSettings(
+          title: 'Cropper',
+        ));
+    if (croppedFile != null) {
+      setState(() {
+        _imageFile = XFile(croppedFile.path);
+      });
     }
   }
 
@@ -839,5 +773,17 @@ class AddBookState extends ConsumerState<AddBook> {
         _imageTaken = true;
       });
     }
+  }
+
+  void showToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 3,
+      backgroundColor: Theme.of(context).iconTheme.color,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
   }
 }

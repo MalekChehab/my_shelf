@@ -237,8 +237,7 @@ class RegisterState extends ConsumerState<Register> {
               setState(() {
                 _isLoading = false;
               });
-              Fluttertoast.showToast(
-                  msg: e.message.toString(), toastLength: Toast.LENGTH_LONG);
+              showToast(e.message.toString());
             }
           }else{
             setState(() {
@@ -287,11 +286,22 @@ class RegisterState extends ConsumerState<Register> {
             setState(() {
               _isLoading = false;
             });
-            Fluttertoast.showToast(
-                msg: e.message.toString(), toastLength: Toast.LENGTH_LONG);
+            showToast(e.message.toString());
           }
         },
       ),
+    );
+  }
+
+  void showToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 3,
+      backgroundColor: Theme.of(context).iconTheme.color,
+      textColor: Colors.white,
+      fontSize: 16.0,
     );
   }
 }

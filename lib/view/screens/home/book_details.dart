@@ -748,10 +748,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
             setState(() {
               _isLoading = false;
             });
-            Fluttertoast.showToast(
-              msg: e.message.toString(),
-              toastLength: Toast.LENGTH_LONG,
-            );
+            showToast(e.message.toString());
           }
         },
       ),
@@ -782,10 +779,7 @@ class BookDetailsState extends ConsumerState<BookDetails>
       setState(() {
         _isLoading = false;
       });
-      Fluttertoast.showToast(
-        msg: e.message.toString(),
-        toastLength: Toast.LENGTH_LONG,
-      );
+      showToast(e.message.toString());
     }
   }
 
@@ -998,6 +992,18 @@ class BookDetailsState extends ConsumerState<BookDetails>
             ),
           );
         });
+  }
+
+  void showToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 3,
+      backgroundColor: Theme.of(context).iconTheme.color,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
   }
 }
 
