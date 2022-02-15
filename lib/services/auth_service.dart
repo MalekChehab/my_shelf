@@ -141,6 +141,18 @@ class AuthenticationService {
     return passwordChecked;
   }
 
+  Future<bool> changeName({required String newName}) async {
+    bool nameChanged = false;
+    try {
+      await _firebaseAuth.currentUser?.updateDisplayName(newName)
+          .then((value) => nameChanged = true);
+    }on FirebaseAuthException catch (e) {
+      errorCode = e.code;
+      throw CustomException(message: _getMessageFromErrorCode());
+    }
+    return nameChanged;
+  }
+
   Future<bool> changeEmail({required String newEmail}) async {
     bool emailChanged = false;
     try{

@@ -18,6 +18,10 @@ final authStateProvider = StreamProvider<User?>((ref) {
   return ref.watch(authServicesProvider).authStateChanges;
 });
 
+// final authGetName = StreamProvider<String>((ref){
+//   return ref.watch(authServicesProvider).getUserName().toString();
+// });
+
 final firebaseDatabaseProvider = Provider<FirebaseDatabase>((ref) {
   var _auth = ref.watch(authStateProvider);
   String uid = '';

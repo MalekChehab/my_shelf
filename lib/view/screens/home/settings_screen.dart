@@ -82,9 +82,9 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
               title: Text('Account'),
             ),
             ListTile(
-              leading: const Icon(Icons.person_outline_outlined),
+              leading: const Icon(Icons.person_rounded),
               title: const Text('Change Name'),
-              onTap: () {},
+              onTap: () => changeName(),
             ),
             ListTile(
               leading: const Icon(Icons.email_rounded),
@@ -113,6 +113,68 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  changeName(){
+    showDialog(context: context, builder: (_){
+      TextEditingController _name = TextEditingController(text:_auth.getUserName().toString());
+      return MyDialog(
+        buttonLabel: 'Change',
+        title: 'Change Name',
+        text: 'Change your name to ',
+        dialogHeight: 170,
+        textField1: CustomTextFormField(
+          capitalization: TextCapitalization.words,
+          icon: Icons.person_rounded,
+          hint: 'Name',
+          textEditingController: _name,
+        ),
+        onPressed: () async {
+          Navigator.of(context).pop();
+          setState(() {
+            _isLoading = true;
+          });
+          try {
+            bool nameChanged = await _auth.changeName(newName: _name.text);
+            if (nameChanged) {
+              setState(() {
+                _isLoading = false;
+              });
+              ref.refresh(authServicesProvider);
+              ScaffoldMessenger.of(context)
+                  .showMaterialBanner(
+                MaterialBanner(
+                  backgroundColor:
+                  Theme.of(context)
+                      .buttonColor,
+                  content: const Text(
+                      'Name has been changed'),
+                  actions: [
+                    TextButton(
+                      child: const Text(
+                          'Dismiss'),
+                      onPressed: () =>
+                          ScaffoldMessenger
+                              .of(context)
+                              .hideCurrentMaterialBanner(),
+                    ),
+                  ],
+                ),
+              );
+              Future.delayed(const Duration(seconds: 2), () {
+                ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
+              });
+
+            }
+          } on CustomException catch (e){
+            setState(() {
+              _isLoading = false;
+            });
+            showToast(e.message.toString());
+          }
+        },
+      );
+    });
   }
 
   changeEmail(){
@@ -198,22 +260,14 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                               setState(() {
                                 _isLoading = false;
                               });
-                              Fluttertoast.showToast(
-                                msg: e.message.toString(),
-                                toastLength: Toast.LENGTH_LONG,
-                                backgroundColor: Theme.of(context).buttonColor,
-                              );
+                              showToast(e.message.toString());
                             }
                           },
                         );
                       });
                 }
               } on CustomException catch (e) {
-                Fluttertoast.showToast(
-                  msg: e.message.toString(),
-                  toastLength: Toast.LENGTH_LONG,
-                  backgroundColor: Theme.of(context).buttonColor,
-                );
+                showToast(e.message.toString());
               }
             },
           );
@@ -287,11 +341,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
                 setState((){
                   _isLoading = false;
                 });
-                Fluttertoast.showToast(
-                  msg: e.message.toString(),
-                  toastLength: Toast.LENGTH_LONG,
-                  backgroundColor: Theme.of(context).buttonColor,
-                );
+                showToast(e.message.toString());
               }
             },
           );
@@ -340,11 +390,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
             setState(() {
               _isLoading = false;
             });
-            Fluttertoast.showToast(
-              msg: e.message.toString(),
-              toastLength: Toast.LENGTH_LONG,
-              backgroundColor: Theme.of(context).buttonColor,
-            );
+            showToast(e.message.toString());
           }
         },
       );
@@ -379,14 +425,22 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
             setState(() {
               _isLoading = false;
             });
-            Fluttertoast.showToast(
-              msg: e.message.toString(),
-              toastLength: Toast.LENGTH_LONG,
-              backgroundColor: Theme.of(context).buttonColor,
-            );
+            showToast(e.message.toString());
           }
         },
       );
     });
+  }
+
+  void showToast(String message) {
+    Fluttertoast.showToast(
+      msg: message,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      timeInSecForIosWeb: 3,
+      backgroundColor: Theme.of(context).iconTheme.color,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
   }
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:loading_overlay/loading_overlay.dart';
 import 'package:my_library/models/book.dart';
-import 'package:my_library/services/auth_service.dart';
 import 'package:my_library/services/general_providers.dart';
 import 'package:my_library/view/screens/home/add_book.dart';
 import 'package:my_library/view/screens/home/settings_screen.dart';
@@ -77,8 +76,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class HomeScreenState extends ConsumerState<HomeScreen> {
   late final bool _isLoading = false;
   late AsyncValue<List<Book>> _booksList;
-  late AuthenticationService _auth;
-
+  late dynamic _auth;
   @override
   Widget build(BuildContext context) {
     _auth = ref.watch(authServicesProvider);
