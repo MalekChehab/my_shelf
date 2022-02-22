@@ -42,6 +42,8 @@ class BookSearch extends SearchDelegate<String> {
             || book.title.toLowerCase().contains(query)
             || book.author.any(
                 (author) => author.contains(query) || author.toLowerCase().contains(query))
+            || book.genre!.toLowerCase().contains(query)
+            || book.genre!.contains(query)
         ).toList());
       },
     ),
@@ -58,6 +60,8 @@ class BookSearch extends SearchDelegate<String> {
               || book.title.toLowerCase().contains(query)
               || book.author.any(
                   (author) => author.contains(query) || author.toLowerCase().contains(query))
+              || book.genre!.toLowerCase().contains(query)
+              || book.genre!.contains(query)
           ).toList());
         }
         return BookList(results!.value);
@@ -172,7 +176,7 @@ class HomeScreenState extends ConsumerState<HomeScreen> {
           backgroundColor: Theme.of(context).iconTheme.color,
           onPressed: () {
             Navigator.push(
-                context, MaterialPageRoute(builder: (_) => AddBook()));
+                context, MaterialPageRoute(builder: (_) => const AddBook()));
           },
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

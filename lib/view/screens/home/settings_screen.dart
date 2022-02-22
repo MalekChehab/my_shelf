@@ -7,6 +7,7 @@ import 'package:my_library/controllers/theme.dart';
 import 'package:my_library/services/custom_exception.dart';
 import 'package:my_library/services/general_providers.dart';
 import 'package:my_library/view/screens/auth/welcome_screen.dart';
+import 'package:my_library/view/screens/home/shelves_screen.dart';
 import 'package:my_library/view/widgets/book_text_form_field.dart';
 import 'package:my_library/view/widgets/dialog.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
@@ -39,8 +40,7 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
         progressIndicator: CircularProgressIndicator(
           color: Theme.of(context).indicatorColor,
         ),
-        child:
-        ListView(
+        child: ListView(
           children: [
             const ListTile(
               title: Text('Common'),
@@ -76,7 +76,9 @@ class SettingsScreenState extends ConsumerState<SettingsScreen> {
             ListTile(
               leading: const Icon(Icons.book),
               title: const Text('Manage Shelves'),
-              onTap: (){},
+              onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ShelvesScreen())
+              ),
             ),
             const ListTile(
               title: Text('Account'),

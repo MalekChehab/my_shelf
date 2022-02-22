@@ -165,12 +165,12 @@ class BookDetailsState extends ConsumerState<BookDetails>
                                 ),
                               ),
                               onTap: () {
-                                Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (_) => ImageScreen(
-                                          tag: 'selectedImage',
-                                          url: widget.book!.coverUrl.toString(),
-                                        ),
-                                ));
+                                // Navigator.of(context).push(MaterialPageRoute(
+                                //     builder: (_) => ImageScreen(
+                                //           tag: 'selectedImage',
+                                //           url: widget.book!.coverUrl.toString(),
+                                //         ),
+                                // ));
                               },
                             ),
                     ),
@@ -1089,7 +1089,7 @@ class ImageScreen extends StatefulWidget {
 
 class _ImageScreenState extends State<ImageScreen> {
   @override
-  Widget build(BuildContext context) {
+  Widget build(_) {
     return SafeArea(
       child: Scaffold(
         body: GestureDetector(
@@ -1104,8 +1104,8 @@ class _ImageScreenState extends State<ImageScreen> {
               ),
             ),
           ),
-          onTap: () => Navigator.pop(context),
-          onVerticalDragEnd: (_) => Navigator.pop(context),
+          onTap: () => Navigator.of(context).pop(),
+          onVerticalDragEnd: (_) => Navigator.of(context).pop(),
         ),
       ),
     );

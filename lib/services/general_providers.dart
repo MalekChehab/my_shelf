@@ -18,9 +18,7 @@ final authStateProvider = StreamProvider<User?>((ref) {
   return ref.watch(authServicesProvider).authStateChanges;
 });
 
-// final authGetName = StreamProvider<String>((ref){
-//   return ref.watch(authServicesProvider).getUserName().toString();
-// });
+final loadingProvider = StateProvider((ref) => false);
 
 final firebaseDatabaseProvider = Provider<FirebaseDatabase>((ref) {
   var _auth = ref.watch(authStateProvider);
@@ -38,13 +36,13 @@ final booksExistProvider = StreamProvider.autoDispose<bool>((ref) {
 });
 
 final allBooksProvider = StreamProvider.autoDispose<List<Book>>((ref) {
-  final db = ref.watch(firebaseDatabaseProvider);
+  final _db = ref.watch(firebaseDatabaseProvider);
   StreamController<List<Book>> controller = StreamController<List<Book>>();
   List<Book> list = [];
-  bool shelvesExist = false;
-  ref.watch(booksExistProvider).whenData((value) => shelvesExist = value);
-  if (shelvesExist) {
-    return db
+  bool booksExist = false;
+  ref.watch(booksExistProvider).whenData((value) => booksExist = value);
+  if (booksExist) {
+    return _db
         .getAllBooks()
         .map((docs) => docs.map((doc) => Book.fromFirestore(doc)).toList());
   }
@@ -53,7 +51,7 @@ final allBooksProvider = StreamProvider.autoDispose<List<Book>>((ref) {
 });
 
 final shelvesProvider = StreamProvider.autoDispose<List<Shelf>>((ref) {
-  final db = ref.watch(firebaseDatabaseProvider);
+  final _db = ref.watch(firebaseDatabaseProvider);
   StreamController<List<Shelf>> controller = StreamController<List<Shelf>>();
   List<Shelf> list = [];
   bool shelvesExist = false;
@@ -61,7 +59,7 @@ final shelvesProvider = StreamProvider.autoDispose<List<Shelf>>((ref) {
     return shelvesExist = value;
   });
   if (shelvesExist) {
-    return db.getShelves().map((docs) => docs.map((doc) => Shelf.fromFirestore(doc)).toList());
+    return _db.getShelves().map((docs) => docs.map((doc) => Shelf.fromFirestore(doc)).toList());
   }
   controller.add(list);
   return controller.stream;

@@ -144,8 +144,13 @@ class AuthenticationService {
   Future<bool> changeName({required String newName}) async {
     bool nameChanged = false;
     try {
-      await _firebaseAuth.currentUser?.updateDisplayName(newName)
-          .then((value) => nameChanged = true);
+      if(newName == ''){
+        throw const CustomException(message: 'Please enter a name');
+      }
+      else {
+        await _firebaseAuth.currentUser?.updateDisplayName(newName)
+            .then((value) => nameChanged = true);
+      }
     }on FirebaseAuthException catch (e) {
       errorCode = e.code;
       throw CustomException(message: _getMessageFromErrorCode());

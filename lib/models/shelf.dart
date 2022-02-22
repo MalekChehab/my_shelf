@@ -5,9 +5,10 @@ class Shelf {
   late String? id;
   late final List<Book> books;
   late final String shelfName;
-  late final int numberOfBooks;
+  late final int? numberOfBooks;
+  late DateTime? dateAdded ;
 
-  Shelf({required this.shelfName, this.id});
+  Shelf({required this.shelfName, this.id, this.numberOfBooks, this.dateAdded});
 
   Map<String, dynamic> toFirebase() => _shelfToFirebase(this);
 
@@ -25,21 +26,14 @@ class Shelf {
   factory Shelf.fromJson(Map<String, dynamic> json){
     return Shelf(
       shelfName: json['shelf_name'],
+      numberOfBooks: json['nb_of_books'],
+      dateAdded: json['date_added'] == null ? DateTime.now()
+          : DateTime.parse(json['date_added'].toDate().toString()),
     );
   }
 
   void setShelfName(String newName){
     shelfName = newName;
-  }
-
-  void addBook(Book book){
-    books.add(book);
-    numberOfBooks++;
-  }
-
-  void removeBook(Book book){
-    books.remove(book);
-    numberOfBooks--;
   }
 
   String getShelfName(){
@@ -48,9 +42,5 @@ class Shelf {
 
   List<Book> getBookList(){
     return books;
-  }
-
-  int getNumberOfBooks(){
-    return numberOfBooks;
   }
 }

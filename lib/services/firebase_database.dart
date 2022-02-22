@@ -12,6 +12,8 @@ import 'package:blurhash/blurhash.dart' as blur;
 
 class FirebaseDatabase {
   FirebaseDatabase({required this.uid});
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String? uid;
   final _usersCollection = FirebaseFirestore.instance.collection('users');
   late final BehaviorSubject<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
@@ -20,8 +22,8 @@ class FirebaseDatabase {
   late final List<QueryDocumentSnapshot<Map<String, dynamic>>> _booksList = [];
   late final List<QueryDocumentSnapshot<Map<String, dynamic>>> _shelves = [];
   late final BehaviorSubject<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
-  _shelvesController =
-  BehaviorSubject<List<QueryDocumentSnapshot<Map<String, dynamic>>>>();
+      _shelvesController =
+      BehaviorSubject<List<QueryDocumentSnapshot<Map<String, dynamic>>>>();
   late final BehaviorSubject<bool> _shelvesExistController =
       BehaviorSubject<bool>();
   late final BehaviorSubject<bool> _booksExistController =
@@ -30,13 +32,13 @@ class FirebaseDatabase {
   CollectionReference get userCollection => _usersCollection;
 
   Future<void> updateUser({required String name, String? uid}) async {
-    await _usersCollection.doc(uid?? this.uid).set({
+    await _usersCollection.doc(uid ?? this.uid).set({
       'name': name,
     }, SetOptions(merge: true));
   }
 
   Stream<bool> shelvesExist() {
-    if (uid!=null) {
+    if (uid != null) {
       var snapshots = _usersCollection.doc(uid).snapshots();
       snapshots.forEach((snapshot) {
         if (snapshot.data()!['shelves'] != null &&
@@ -49,7 +51,7 @@ class FirebaseDatabase {
   }
 
   Stream<bool> booksExist() {
-    if (uid!=null) {
+    if (uid != null) {
       var snapshots = _usersCollection.doc(uid).snapshots();
       snapshots.forEach((snapshot) {
         if (snapshot.data()!['total_books'] != null &&
@@ -60,20 +62,19 @@ class FirebaseDatabase {
     }
     return _booksExistController.stream;
   }
-  
+
   Future<bool> checkShelf(Shelf shelf) async {
     bool exist = false;
     try {
       List<String> _stringShelves = [];
       await _usersCollection.doc(uid).get().then((snapshot) {
-            if (snapshot.data()!['shelves'] != null) {
-              if (List.castFrom(snapshot.data()!['shelves']).isNotEmpty) {
-                _stringShelves =
-                    List.castFrom(snapshot.data()!['shelves'] as List);
-              }
-            }
+        if (snapshot.data()!['shelves'] != null) {
+          if (List.castFrom(snapshot.data()!['shelves']).isNotEmpty) {
+            _stringShelves = List.castFrom(snapshot.data()!['shelves'] as List);
+          }
+        }
       });
-      if(_stringShelves.contains(shelf.shelfName)){
+      if (_stringShelves.contains(shelf.shelfName)) {
         exist = true;
       }
     } on Exception catch (e) {
@@ -82,54 +83,182 @@ class FirebaseDatabase {
     return exist;
   }
 
-  Future<bool> addBook(Book book, Shelf shelf, XFile? _imageFile, bool kIsWeb) async {
+  Future<bool> addShelf(Shelf shelf) async {
+    bool shelfAdded = false;
+    try {
+      await _firestore.runTransaction((transaction) async {
+        DocumentReference userDoc = _usersCollection.doc(uid);
+        CollectionReference shelvesCollection = userDoc.collection('shelves');
+        await shelvesCollection.add(shelf.toFirebase()).then((doc) {
+          transaction.set(
+              doc,
+              {
+                'date_added': FieldValue.serverTimestamp(),
+              },
+              SetOptions(
+                merge: true,
+              ));
+          transaction.set(
+              userDoc,
+              {
+                'nb_of_shelves': FieldValue.increment(1),
+                'shelves': FieldValue.arrayUnion([shelf.shelfName]),
+              },
+              SetOptions(
+                merge: true,
+              ));
+          shelfAdded = true;
+        });
+      });
+    } on FirebaseException catch (e) {
+      throw CustomException(message: e.message);
+    }
+    return shelfAdded;
+  }
+
+  Future<bool> changeShelfName(Shelf shelf, String newShelfName) async {
+    bool nameChanged = false;
+    try {
+      final batch = _firestore.batch();
+      await _firestore.runTransaction((transaction) async {
+        DocumentReference userDoc = _usersCollection.doc(uid);
+        DocumentReference shelfDoc =
+            userDoc.collection('shelves').doc(shelf.id);
+        CollectionReference booksCollection = shelfDoc.collection('books');
+        final shelfInfo = await transaction.get(shelfDoc);
+        transaction.set(
+            shelfDoc,
+            {
+              'shelf_name': newShelfName,
+            },
+            SetOptions(merge: true));
+        transaction.set(
+            userDoc,
+            {
+              'shelves': FieldValue.arrayRemove([shelf.shelfName]),
+            },
+            SetOptions(merge: true));
+        transaction.set(
+            userDoc,
+            {
+              'shelves': FieldValue.arrayUnion([newShelfName]),
+            },
+            SetOptions(merge: true));
+        if (shelfInfo['nb_of_books'] > 0) {
+          booksCollection.get().then((querySnapshot) {
+            for (var doc in querySnapshot.docs) {
+              batch.set(
+                  doc.reference,
+                  {
+                    'shelf_name': newShelfName,
+                  },
+                  SetOptions(merge: true));
+            }
+            batch.commit();
+          });
+        }
+        nameChanged = true;
+      });
+    } on FirebaseException catch (e) {
+      throw CustomException(message: e.message);
+    }
+    return nameChanged;
+  }
+
+  Future<bool> deleteShelf(Shelf shelf) async {
+    bool shelfDeleted = false;
+    try {
+      final batch = _firestore.batch();
+      await _firestore.runTransaction((transaction) async {
+        DocumentReference userDoc = _usersCollection.doc(uid);
+        DocumentReference shelfDoc =
+            userDoc.collection('shelves').doc(shelf.id);
+        CollectionReference booksCollection = shelfDoc.collection('books');
+        DocumentSnapshot shelfInfo = await transaction.get(shelfDoc);
+        int nbOfBooks = shelfInfo['nb_of_books'];
+        if (nbOfBooks > 0) {
+          booksCollection.get().then((querySnapshot) {
+            for (var doc in querySnapshot.docs) {
+              batch.delete(doc.reference);
+            }
+            batch.commit();
+          });
+        }
+        transaction.delete(shelfDoc);
+        transaction.set(
+            userDoc,
+            {
+              'nb_of_shelves': FieldValue.increment(-1),
+              'shelves': FieldValue.arrayRemove([shelf.shelfName]),
+              'total_books': FieldValue.increment(-nbOfBooks),
+            },
+            SetOptions(
+              merge: true,
+            ));
+        _booksList
+            .removeWhere((element) => element.data()['shelf_id'] == shelf.id);
+        _booksController.add(_booksList);
+        _shelves.removeWhere((element) => element.id == shelf.id);
+        _shelvesController.add(_shelves);
+        shelfDeleted = true;
+      });
+    } on FirebaseException catch (e) {
+      throw CustomException(message: e.message);
+    }
+    return shelfDeleted;
+  }
+
+  Future<bool> addBook(
+      Book book, Shelf shelf, XFile? _imageFile, bool kIsWeb) async {
     bool bookAdded = false;
     try {
       bool shelfExist = await checkShelf(shelf);
+      DocumentReference userDoc = _usersCollection.doc(uid);
+      CollectionReference shelfCollection = userDoc.collection('shelves');
       if (!shelfExist) {
-        await _usersCollection
-            .doc(uid)
-            .collection('shelves').add(shelf.toFirebase()).then((doc) {
-              _usersCollection.doc(uid).set({
-                "nb_of_shelves": FieldValue.increment(1),
+        await shelfCollection.add(shelf.toFirebase()).then((doc) {
+          doc.set({
+                'date_added': FieldValue.serverTimestamp(),
               }, SetOptions(merge: true,));
-              shelf.id = doc.id;
+          userDoc.set({
+                'nb_of_shelves': FieldValue.increment(1),
+                'shelves': FieldValue.arrayUnion([shelf.shelfName]),
+              }, SetOptions(merge: true,));
+          shelf.id = doc.id;
         });
       }
-      await _usersCollection
-          .doc(uid)
-          .collection('shelves')
-          .doc(shelf.id)
-          .collection('books')
-          .add(book.toFirebase())
-          .then((doc) {
-        doc.set({
-          "date_added": FieldValue.serverTimestamp(),
-          "pages_read": 0,
-          "rating": 0.0,
-          "is_reading": false,
-          "is_finished": false,
-          "times_read": 0,
-          "start_reading": DateTime(1000, 1, 1),
-          "end_reading": DateTime(1000, 1, 1),
-        }, SetOptions(merge: true));
-        _usersCollection.doc(uid).collection('shelves').doc(shelf.id).set({
-          'shelf_name': shelf.shelfName,
-          'nb_of_books': FieldValue.increment(1),
-        }, SetOptions(merge: true));
-        _usersCollection.doc(uid).set({
-          "shelves": FieldValue.arrayUnion([book.shelf!.shelfName]),
-          "authors": FieldValue.arrayUnion(book.author),
-          "tags": FieldValue.arrayUnion(book.tags!.toList()),
-          "genre": FieldValue.arrayUnion([book.genre]),
-          "publisher": FieldValue.arrayUnion([book.publisher]),
-          "language": FieldValue.arrayUnion([book.language]),
-          "total_books": FieldValue.increment(1),
-        }, SetOptions(merge: true));
-        if (_imageFile!.path != 'no image') {
-          uploadImageToFirebase('${doc.id}.jpg', shelf, doc.id, _imageFile, kIsWeb);
-        }
-        bookAdded = true;
+
+      DocumentReference shelfDoc = shelfCollection.doc(shelf.id);
+      CollectionReference booksCollection = shelfDoc.collection('books');
+      await _firestore.runTransaction((transaction) async {
+        await booksCollection.add(book.toFirebase()).then((bookDoc) {
+          transaction.set(bookDoc, {
+                'date_added': FieldValue.serverTimestamp(),
+                'pages_read': 0,
+                'rating': 0.0,
+                'is_reading': false,
+                'is_finished': false,
+                'times_read': 0,
+                'start_reading': DateTime(1000, 1, 1),
+                'end_reading': DateTime(1000, 1, 1),
+              }, SetOptions(merge: true));
+          transaction.set(shelfDoc, {
+                'nb_of_books': FieldValue.increment(1),
+              }, SetOptions(merge: true,));
+          transaction.set(userDoc, {
+                'authors': FieldValue.arrayUnion(book.author),
+                'tags': FieldValue.arrayUnion(book.tags!.toList()),
+                'genre': FieldValue.arrayUnion([book.genre]),
+                'publisher': FieldValue.arrayUnion([book.publisher]),
+                'language': FieldValue.arrayUnion([book.language]),
+                'total_books': FieldValue.increment(1),
+              }, SetOptions(merge: true,));
+          if (_imageFile!.path != 'no image') {
+            uploadImageToFirebase(
+                '${bookDoc.id}.jpg', shelf, bookDoc.id, _imageFile, kIsWeb);
+          }
+          bookAdded = true;
+        });
       });
     } on FirebaseException catch (e) {
       throw CustomException(message: e.message);
@@ -143,22 +272,23 @@ class FirebaseDatabase {
     return result;
   }
 
-  Future uploadImageToFirebase(
-      String fileName, Shelf shelf, String bookDocId, XFile? _imageFile, bool kIsWeb) async {
+  Future uploadImageToFirebase(String fileName, Shelf shelf, String bookDocId,
+      XFile? _imageFile, bool kIsWeb) async {
     try {
       late String blurHash = '';
       late String downloadUrl = '';
-      if(kIsWeb){
+      if (kIsWeb) {
         PickedFile pickedFile = PickedFile(File(_imageFile!.path).path);
         Reference reference = FirebaseStorage.instance
-            .ref().child('$uid/${shelf.id}/book_covers/$fileName');
+            .ref()
+            .child('$uid/${shelf.id}/book_covers/$fileName');
         await reference.putData(
           await pickedFile.readAsBytes(),
           SettableMetadata(contentType: 'image/jpeg'),
         );
         downloadUrl = await reference.getDownloadURL();
         blurHash = 'LUF~U0~pE34:?w%Nj]ad?HxubcWq';
-      }else {
+      } else {
         blurHash = await blurHashEncode(_imageFile);
         TaskSnapshot snapshot = await FirebaseStorage.instance
             .ref('$uid/${shelf.id}/book_covers/$fileName')
@@ -216,7 +346,7 @@ class FirebaseDatabase {
   Stream<List<QueryDocumentSnapshot<Map<String, dynamic>>>> getShelves() {
     try {
       var snapshots =
-      _usersCollection.doc(uid).collection('shelves').snapshots();
+          _usersCollection.doc(uid).collection('shelves').snapshots();
       snapshots.forEach((snapshot) {
         for (var shelf in snapshot.docs) {
           if (_shelves.where((e) => e.id == shelf.id).isNotEmpty) {
@@ -232,31 +362,59 @@ class FirebaseDatabase {
     return _shelvesController.stream;
   }
 
+  Future<bool> checkIfShelfExists(String shelfId) async {
+    try {
+      var doc = await _usersCollection
+          .doc(uid)
+          .collection('shelves')
+          .doc(shelfId)
+          .get();
+      return doc.exists;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<bool> checkIfBookExists(String shelfId, String bookId) async {
+    try {
+      var doc = await _usersCollection
+          .doc(uid)
+          .collection('shelves')
+          .doc(shelfId)
+          .collection('books')
+          .doc(bookId)
+          .get();
+      return doc.exists;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<bool> deleteBook(Book book) async {
     bool bookDeleted = false;
     try {
-      await _usersCollection
-          .doc(uid).
-    collection('shelves').doc(book.shelf!.id).collection('books')
-          .doc(book.id)
-          .delete()
-          .then((value) {
+      bool bookExist = await checkIfBookExists(book.shelf!.id.toString(), book.id.toString());
+      await _firestore.runTransaction((transaction) async {
+        DocumentReference userDoc = _usersCollection.doc(uid);
+        DocumentReference shelfDoc = userDoc.collection('shelves').doc(book.shelf!.id);
+        DocumentReference bookDoc = shelfDoc.collection('books').doc(book.id);
+
+        if(bookExist){
+          transaction.delete(bookDoc);
+          transaction.set(shelfDoc, {
+            'nb_of_books': FieldValue.increment(-1),
+          }, SetOptions(merge: true,));
+          transaction.set(userDoc, {
+            'total_books': FieldValue.increment(-1),
+          }, SetOptions(merge: true,));
+          if (book.coverUrl != "") {
+            FirebaseStorage.instance
+                .ref('$uid/${book.shelf!.id}/book_covers/${book.id}.jpg')
+                .delete();
+          }
+        }
         _booksList.removeWhere((element) => element.id == book.id);
         _booksController.add(_booksList);
-        _usersCollection
-            .doc(uid).collection('shelves')
-            .doc(book.shelf!.id)
-            .set({
-          'nb_of_books': FieldValue.increment(-1),
-        }, SetOptions(merge: true));
-        _usersCollection.doc(uid).set({
-          "total_books": FieldValue.increment(-1),
-        }, SetOptions(merge: true));
-        if (book.coverUrl != "") {
-          FirebaseStorage.instance
-              .ref('$uid/${book.shelf!.id}/book_covers/${book.id}.jpg')
-              .delete();
-        }
         bookDeleted = true;
       });
     } on FirebaseException catch (e) {
@@ -265,46 +423,42 @@ class FirebaseDatabase {
     return bookDeleted;
   }
 
-  Future<bool> editBook(Book newBook, Shelf shelf, XFile? _imageFile, bool kIsWeb) async {
+  Future<bool> editBook(
+      Book newBook, Shelf shelf, XFile? _imageFile, bool kIsWeb) async {
     bool bookEdited = false;
     try {
-      await _usersCollection
-          .doc(uid)
-          .collection('shelves')
-          .doc(shelf.id)
-          .collection('books')
-          .doc(newBook.id.toString())
-          .set(newBook.toFirebase(), SetOptions(merge: true))
-          .then((_) async {
-        _usersCollection.doc(uid).set({
-          "authors": FieldValue.arrayUnion(newBook.author),
-          "tags": FieldValue.arrayUnion(newBook.tags!.toList()),
-          "genre": FieldValue.arrayUnion([newBook.genre]),
-          "publisher": FieldValue.arrayUnion([newBook.publisher]),
-          "language": FieldValue.arrayUnion([newBook.language]),
-        }, SetOptions(merge: true));
-        if (_imageFile!.path != 'no image' && _imageFile.path != 'delete image') { //if user took a new image
-          uploadImageToFirebase( //upload image to firebase
-              '${newBook.id}.jpg', shelf, newBook.id.toString(), _imageFile, kIsWeb);
-        }
-        else if(_imageFile.path == 'delete image') {// if user removed the image
+      await _firestore.runTransaction((transaction) async {
+        DocumentReference userDoc = _usersCollection.doc(uid);
+        DocumentReference bookDoc = userDoc.collection('shelves')
+            .doc(shelf.id).collection('books').doc(newBook.id);
+        transaction.set(bookDoc, newBook.toFirebase(), SetOptions(merge: true,));
+        transaction.set(userDoc, {
+          'authors': FieldValue.arrayUnion(newBook.author),
+          'tags': FieldValue.arrayUnion(newBook.tags!.toList()),
+          'genre': FieldValue.arrayUnion([newBook.genre]),
+          'publisher': FieldValue.arrayUnion([newBook.publisher]),
+          'language': FieldValue.arrayUnion([newBook.language]),
+        }, SetOptions(merge: true,));
+        if (_imageFile!.path != 'no image' &&
+            _imageFile.path != 'delete image') {
+          //if user took a new image
+          uploadImageToFirebase(
+            //upload image to firebase
+              '${newBook.id}.jpg',
+              shelf,
+              newBook.id.toString(),
+              _imageFile,
+              kIsWeb);
+        } else if (_imageFile.path == 'delete image') {
+          // if user removed the image
           Reference ref = FirebaseStorage.instance
               .ref('$uid/${shelf.id}/book_covers/${newBook.id}.jpg');
-          try {
             await ref.delete();
-            await _usersCollection
-                .doc(uid)
-                .collection('shelves')
-                .doc(shelf.id)
-                .collection('books')
-                .doc(newBook.id.toString())
-                .set({
-              "cover": null,
+
+            transaction.set(bookDoc, {
+              'cover': null,
               'blur_hash': null,
-            }, SetOptions(merge: true));
-          }catch(e){
-            throw CustomException(message: e.toString());
-          }
+            }, SetOptions(merge: true,));
         }
         bookEdited = true;
       });
@@ -333,15 +487,17 @@ class FirebaseDatabase {
     return bookEdited;
   }
 
-  Future<bool> deleteUserData(String uid) async{
+  Future<bool> deleteUserData(String uid) async {
     bool userDataDeleted = false;
-    try{
+    try {
       await _usersCollection.doc(uid).delete().then((_) async {
+        _booksList.clear();
+        _shelves.clear();
         _booksController.close();
         _shelvesController.close();
       });
       // await FirebaseStorage.instance.ref('$uid').delete();
-    }on FirebaseException catch (e){
+    } on FirebaseException catch (e) {
       throw CustomException(message: e.message);
     }
     return userDataDeleted;

@@ -10,6 +10,10 @@ class CustomTextFormField extends StatefulWidget {
   final TextCapitalization? capitalization;
   final Function(String)? onChanged;
   final TextStyle? hintStyle;
+  final Widget? suffix;
+  final bool? enabled;
+  final bool? readOnly;
+  final TextInputAction? textInputAction;
 
   const CustomTextFormField(
       {Key? key,
@@ -21,6 +25,10 @@ class CustomTextFormField extends StatefulWidget {
         this.capitalization,
         this.onChanged,
         this.hintStyle,
+        this.suffix,
+        this.enabled,
+        this.readOnly,
+        this.textInputAction,
       }) : super(key: key);
 
   @override
@@ -45,6 +53,9 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
       elevation: _large? 12 : (_medium? 10 : 8),
       child: TextFormField(
         onChanged: widget.onChanged,
+        readOnly: widget.readOnly??false,
+        enabled: widget.enabled,
+        textInputAction: widget.textInputAction,
         textCapitalization: widget.capitalization ?? TextCapitalization.none,
         style: Theme.of(context).textTheme.subtitle2,
         validator: widget.validator,
@@ -57,6 +68,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               color: Theme.of(context).iconTheme.color,
               size: 20,
             ),
+          suffixIcon: widget.suffix,
           hintText: widget.hint,
           hintStyle: widget.hintStyle,
           border: OutlineInputBorder(

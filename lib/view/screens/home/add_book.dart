@@ -8,7 +8,6 @@ import 'package:my_library/services/custom_exception.dart';
 import 'package:my_library/services/general_providers.dart';
 import 'package:my_library/view/screens/home/book_details.dart';
 import 'package:my_library/view/screens/home/home_screen.dart';
-import 'package:my_library/view/screens/home/select_shelves_screen.dart';
 import 'package:my_library/view/widgets/book_text_form_field.dart';
 import 'package:flutter/material.dart';
 import 'package:my_library/controllers/responsive_ui.dart';
@@ -16,12 +15,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:permission_handler/permission_handler.dart';
-
+import 'package:my_library/view/widgets/dialog.dart';
 
 class AddBook extends ConsumerStatefulWidget {
-  late Shelf? shelf;
   final Book? book;
-  AddBook({Key? key, this.shelf, this.book}) : super(key: key);
+  const AddBook({Key? key, this.book}) : super(key: key);
 
   @override
   AddBookState createState() => AddBookState();
@@ -34,6 +32,7 @@ class AddBookState extends ConsumerState<AddBook> {
   late bool _large;
   late bool _medium;
   final _formKey = GlobalKey<FormState>();
+  late TextEditingController _shelf;
   late TextEditingController _title;
   late TextEditingController _author;
   late TextEditingController _genre;
@@ -54,9 +53,14 @@ class AddBookState extends ConsumerState<AddBook> {
   late bool _isLoading = false;
   late dynamic _db;
   late Book newBook;
+  late AsyncValue<List<Shelf>> _shelvesProvider;
+  late List<Shelf> _shelvesList;
+  late Shelf? selectedShelf;
 
   @override
   void initState() {
+    _shelf = TextEditingController(
+        text: widget.book == null ? null : widget.book!.shelf!.shelfName);
     _title = TextEditingController(
         text: widget.book == null ? null : widget.book!.title);
     _author = TextEditingController(
@@ -76,7 +80,8 @@ class AddBookState extends ConsumerState<AddBook> {
     _isbn = TextEditingController(
         text: widget.book == null ? null : widget.book!.isbn);
     _numberOfPages = TextEditingController(
-        text: widget.book == null ? null : widget.book!.numberOfPages.toString());
+        text:
+            widget.book == null ? null : widget.book!.numberOfPages.toString());
     _language = TextEditingController(
         text: widget.book == null ? null : widget.book!.language);
     _description = TextEditingController(
@@ -86,12 +91,12 @@ class AddBookState extends ConsumerState<AddBook> {
     _editionDate = TextEditingController(
         text: widget.book == null ? null : widget.book!.editionDate);
 
-    if (widget.shelf == null && widget.book != null) {
-      widget.shelf = widget.book!.shelf;
+    if (widget.book != null) {
+      selectedShelf = widget.book!.shelf;
     }
-    // if(widget.book != null && widget.book!.coverUrl.toString() != ""){
-    //   _imageTaken = true;
-    // }
+    if(widget.book != null && widget.book!.coverUrl.toString() != ""){
+      _imageTaken = true;
+    }
     super.initState();
   }
 
@@ -103,20 +108,25 @@ class AddBookState extends ConsumerState<AddBook> {
     _large = ResponsiveWidget.isScreenLarge(_width, _pixelRatio);
     _medium = ResponsiveWidget.isScreenMedium(_width, _pixelRatio);
     _db = ref.watch(firebaseDatabaseProvider);
+    _shelvesProvider = ref.watch(shelvesProvider);
+
     return Material(
       child: Scaffold(
+        // resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: widget.book == null
               ? const Text('Add Book')
               : const Text('Edit Book'),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back,),
+            icon: const Icon(
+              Icons.arrow_back,
+            ),
             onPressed: () => Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                    builder: (_) => widget.book == null ?
-                    const HomeScreen()
-                        : BookDetails(book: widget.book),
-                ),
+              MaterialPageRoute(
+                builder: (_) => widget.book == null
+                    ? const HomeScreen()
+                    : BookDetails(book: widget.book),
+              ),
             ),
           ),
         ),
@@ -213,48 +223,133 @@ class AddBookState extends ConsumerState<AddBook> {
   }
 
   Widget selectShelf() {
-    return MyButton(
-      onPressed: () {
-        widget.book == null
-            ? Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (_) => const SelectShelf()))
-            : null;
-      },
-      child: Container(
-        alignment: Alignment.center,
-        height: _height / 11.5,
-        width: _large ? _width / 1.2 : (_medium ? _width / 3.75 : _width / 3.5),
-        decoration: const BoxDecoration(
-          borderRadius: BorderRadius.all(Radius.circular(20.0)),
-        ),
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            Icon(Icons.house_siding_rounded, color: Theme.of(context).buttonColor),
-            const SizedBox(width: 10),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                // widget.book == null ?
-                widget.shelf != null
-                    ? widget.shelf!.getShelfName()
-                    : 'Select Shelf'
-                // : widget.book!.shelf!.getShelfName()
-                ,
-                style: Theme.of(context).textTheme.subtitle2,
+    return CustomTextFormField(
+      icon: Icons.house_siding_rounded,
+      textEditingController: _shelf,
+      hint: 'Select shelf',
+      enabled: widget.book == null ? true : false,
+      readOnly: true,
+      capitalization: TextCapitalization.words,
+      suffix: IconButton(
+        icon: const Icon(Icons.arrow_drop_down),
+        onPressed: () {
+          _shelvesList = _shelvesProvider.asData!.value;
+          showModalBottomSheet(
+              context: context,
+              backgroundColor: Theme.of(context).backgroundColor,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
               ),
-            ),
-            const Spacer(),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: Theme.of(context).textTheme.caption!.color,
-            ),
-          ],
-        ),
+              builder: (BuildContext bc) {
+                return SizedBox(
+                  // height: _height / 4,
+                  child: SafeArea(
+                    child: Padding(
+                        padding: const EdgeInsets.only(top: 20.0),
+                        child: _shelvesList.isEmpty ? SizedBox(
+                          height: 100,
+                          child: ListTile(
+                            title: Center(
+                              child: Text(
+                                'Add a new shelf',
+                                style: TextStyle(
+                                    color: Theme.of(context)
+                                        .iconTheme
+                                        .color),
+                              ),
+                            ),
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              addNewShelf();
+                            },
+                          ),
+                        ) : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: _shelvesList.length,
+                          itemBuilder: ((context, index) {
+                            return Column(
+                              children: [
+                                ListTile(
+                                  title: Text(
+                                      _shelvesList.elementAt(index).shelfName),
+                                  onTap: () {
+                                    setState(() {
+                                      selectedShelf =
+                                          _shelvesList.elementAt(index);
+                                      _shelf.text = _shelvesList
+                                          .elementAt(index)
+                                          .shelfName;
+                                    });
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                                index != _shelvesList.length - 1
+                                    ? const SizedBox()
+                                    : ListTile(
+                                        title: Center(
+                                          child: Text(
+                                            'Add a new shelf',
+                                            style: TextStyle(
+                                                color: Theme.of(context)
+                                                    .iconTheme
+                                                    .color),
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          Navigator.of(context).pop();
+                                          addNewShelf();
+                                          },
+                                        ),
+                              ],
+                            );
+                          }),
+                        )
+                        ),
+                  ),
+                );
+              });
+        },
       ),
-      color: Theme.of(context).backgroundColor,
-      elevation: _large ? 12 : (_medium ? 10 : 8),
     );
+  }
+
+  addNewShelf(){
+    TextEditingController _newShelf =
+    TextEditingController();
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return MyDialog(
+            buttonLabel: 'Add',
+            onPressed: () {
+              if(_shelvesList.any((element) => element.shelfName == _newShelf.text)) {
+                showToast('Shelf already exist');
+              }else {
+                Navigator.of(context).pop();
+                setState(() {
+                  _shelf = _newShelf;
+                  selectedShelf = Shelf(shelfName: _newShelf.text);
+                });
+              }
+            },
+            title: 'Add a new shelf',
+            textField1:
+            CustomTextFormField(
+              capitalization:
+              TextCapitalization
+                  .words,
+              icon: Icons
+                  .house_siding_rounded,
+              hint: 'Enter Shelf Name',
+              textEditingController:
+              _newShelf,
+            ),
+          );
+        });
   }
 
   Widget titleTextFormField() {
@@ -264,6 +359,7 @@ class AddBookState extends ConsumerState<AddBook> {
       icon: Icons.menu_book_rounded,
       validator: (dynamic value) => value.isEmpty ? 'Enter a title' : null,
       capitalization: TextCapitalization.words,
+      textInputAction: TextInputAction.next,
     );
   }
 
@@ -273,6 +369,7 @@ class AddBookState extends ConsumerState<AddBook> {
       textEditingController: _author,
       icon: Icons.person_outline_rounded,
       capitalization: TextCapitalization.words,
+      textInputAction: TextInputAction.next,
     );
   }
 
@@ -282,6 +379,7 @@ class AddBookState extends ConsumerState<AddBook> {
       textEditingController: _genre,
       icon: Icons.category_outlined,
       capitalization: TextCapitalization.words,
+      textInputAction: TextInputAction.next,
     );
   }
 
@@ -291,6 +389,7 @@ class AddBookState extends ConsumerState<AddBook> {
       textEditingController: _numberOfPages,
       keyboardType: TextInputType.number,
       icon: Icons.collections_bookmark,
+      textInputAction: TextInputAction.next,
     );
   }
 
@@ -300,6 +399,7 @@ class AddBookState extends ConsumerState<AddBook> {
       textEditingController: _location,
       icon: Icons.location_on_outlined,
       capitalization: TextCapitalization.words,
+      textInputAction: TextInputAction.next,
     );
   }
 
@@ -309,6 +409,7 @@ class AddBookState extends ConsumerState<AddBook> {
       textEditingController: _tags,
       icon: Icons.tag_rounded,
       capitalization: TextCapitalization.words,
+      textInputAction: TextInputAction.next,
     );
   }
 
@@ -318,6 +419,7 @@ class AddBookState extends ConsumerState<AddBook> {
       textEditingController: _translator,
       icon: Icons.translate_rounded,
       capitalization: TextCapitalization.words,
+      textInputAction: TextInputAction.next,
     );
   }
 
@@ -327,6 +429,7 @@ class AddBookState extends ConsumerState<AddBook> {
       textEditingController: _publisher,
       icon: Icons.book_online_rounded,
       capitalization: TextCapitalization.words,
+      textInputAction: TextInputAction.next,
     );
   }
 
@@ -336,6 +439,7 @@ class AddBookState extends ConsumerState<AddBook> {
       textEditingController: _publishDate,
       icon: Icons.calendar_today_rounded,
       keyboardType: TextInputType.datetime,
+      textInputAction: TextInputAction.next,
     );
   }
 
@@ -345,6 +449,7 @@ class AddBookState extends ConsumerState<AddBook> {
       textEditingController: _isbn,
       icon: Icons.book_rounded,
       keyboardType: TextInputType.number,
+      textInputAction: TextInputAction.next,
     );
   }
 
@@ -354,6 +459,7 @@ class AddBookState extends ConsumerState<AddBook> {
       textEditingController: _language,
       icon: Icons.language_rounded,
       capitalization: TextCapitalization.words,
+      textInputAction: TextInputAction.next,
     );
   }
 
@@ -364,6 +470,7 @@ class AddBookState extends ConsumerState<AddBook> {
       icon: Icons.description,
       capitalization: TextCapitalization.sentences,
       keyboardType: TextInputType.multiline,
+      textInputAction: TextInputAction.next,
     );
   }
 
@@ -373,6 +480,7 @@ class AddBookState extends ConsumerState<AddBook> {
       textEditingController: _edition,
       icon: Icons.book_rounded,
       keyboardType: TextInputType.number,
+      textInputAction: TextInputAction.next,
     );
   }
 
@@ -382,51 +490,54 @@ class AddBookState extends ConsumerState<AddBook> {
       textEditingController: _editionDate,
       icon: Icons.calendar_today_rounded,
       keyboardType: TextInputType.datetime,
+      textInputAction: TextInputAction.done,
     );
   }
 
-  Widget coverFormField(){
-    return _imageTaken == true || widget.book != null && widget.book!.coverUrl.toString() != ""
-    //when an image is taken or in edit mode and image exist
-    ? GestureDetector(
-      child: Container(
-        height: _large
-            ? _height / 5
-            : (_medium ? _height / 10 : _height / 7),
-        width: _large
-            ? _width / 2
-            : (_medium ? _width / 3.75 : _width / 3.5),
-        decoration: const BoxDecoration(
-          borderRadius: BorderRadius.all(Radius.circular(20.0)),
-        ),
-        child: _imageTaken == false ?
-        Image.network(widget.book!.coverUrl.toString())
-            : kIsWeb ?
-        Image.network(_imageFile!.path) : Image.file(File(_imageFile!.path))
-      ),
-      onTap: () => _editImageSelectPicker(),
-    )
+  Widget coverFormField() {
+    return _imageTaken == true
+        ? GestureDetector(
+            child: Container(
+                height: _large
+                    ? _height / 5
+                    : (_medium ? _height / 10 : _height / 7),
+                width: _large
+                    ? _width / 2
+                    : (_medium ? _width / 3.75 : _width / 3.5),
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.all(Radius.circular(20.0)),
+                ),
+                child:
+                // _imageTaken == false
+                widget.book != null && widget.book!.coverUrl.toString() != ""
+                    ? Image.network(widget.book!.coverUrl.toString())
+                    : kIsWeb
+                        ? Image.network(_imageFile!.path)
+                        : Image.file(File(_imageFile!.path))),
+            onTap: () => _editImageSelectPicker(),
+          )
         : MyButton(
-      //when no image
-      child: Container(
-        height: _large
-            ? _height / 5
-            : (_medium ? _height / 10 : _height / 7),
-        width: _large
-            ? _width / 2
-            : (_medium ? _width / 3.75 : _width / 3.5),
-        decoration: const BoxDecoration(
-          borderRadius: BorderRadius.all(Radius.circular(20.0)),
-        ),
-        child: Icon(
-          Icons.camera_alt_outlined,
-          color: Theme.of(context).iconTheme.color,
-        ),
-      ),
-      color: Theme.of(context).backgroundColor,
-      elevation: _large ? 20 : (_medium ? 10 : 8),
-      onPressed: () => kIsWeb ? _webImageFromGallery() : _mobileSelectPicker(),
-    );
+            //when no image
+            child: Container(
+              height: _large && !kIsWeb
+                  ? _height / 5
+                  : (_medium ? _height / 6 : _height / 8),
+              width: _large
+                  ? _width / 2
+                  : (_medium ? _width / 3.75 : _width / 3.5),
+              decoration: const BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(20.0)),
+              ),
+              child: Icon(
+                Icons.camera_alt_outlined,
+                color: Theme.of(context).iconTheme.color,
+              ),
+            ),
+            color: Theme.of(context).backgroundColor,
+            elevation: _large ? 20 : (_medium ? 10 : 8),
+            onPressed: () =>
+                kIsWeb ? _webImageFromGallery() : _mobileSelectPicker(),
+          );
   }
 
   Widget confirmButton(BuildContext context) {
@@ -434,7 +545,7 @@ class AddBookState extends ConsumerState<AddBook> {
         child: Container(
           alignment: Alignment.center,
           height: _height / 13,
-          width: _large ? _width / 2 : (_medium ? _width / 3.75 : _width / 3.5),
+          width: _large ? _width / 2 : (_medium ? _width / 3 : _width / 3.5),
           decoration: const BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(20.0)),
           ),
@@ -442,16 +553,24 @@ class AddBookState extends ConsumerState<AddBook> {
           child: Text(
             widget.book == null ? 'Add Book' : 'Save',
             style: TextStyle(
-                fontSize: _large ? 18 : (_medium ? 12 : 10),
+                fontSize: _large ? 18 : (_medium ? 15 : 12),
                 color: Theme.of(context).iconTheme.color),
           ),
         ),
         color: Theme.of(context).primaryColor,
         elevation: _large ? 12 : (_medium ? 10 : 8),
         onPressed: () async {
-          widget.shelf == null
-              ? showToast('Please select a shelf')
-              : uploadData();
+          if (selectedShelf == null && _shelf.text == '') {
+            showToast('Please select a shelf');
+          } else if (selectedShelf == null && _shelf.text != '') {
+            setState(() {
+              selectedShelf = Shelf(shelfName: _shelf.text);
+            });
+            // selectedShelf = Shelf(shelfName: _shelf.text);
+            uploadData();
+          } else {
+            uploadData();
+          }
         });
   }
 
@@ -460,11 +579,12 @@ class AddBookState extends ConsumerState<AddBook> {
       _isLoading = true;
     });
     newBook = Book(
-      shelf: widget.shelf,
+      shelf: selectedShelf,
       title: _title.text,
       author: _author.text == "" ? [""] : (_author.text).split(', '),
       genre: _genre.text == "" ? "" : _genre.text,
-      numberOfPages: _numberOfPages.text == "" ? 0 : int.parse(_numberOfPages.text),
+      numberOfPages:
+          _numberOfPages.text == "" ? 0 : int.parse(_numberOfPages.text),
       location: _location.text == "" ? "" : _location.text,
       tags: _tags.text == "" ? [""] : (_tags.text).split(', '),
       translator: _translator.text == "" ? "" : _translator.text,
@@ -480,13 +600,14 @@ class AddBookState extends ConsumerState<AddBook> {
     if (_formKey.currentState!.validate()) {
       if (widget.book == null) {
         try {
-          bool bookAdded = await _db.addBook(newBook, widget.shelf!, _imageFile, kIsWeb);
+          bool bookAdded =
+              await _db.addBook(newBook, selectedShelf!, _imageFile, kIsWeb);
           if (bookAdded) {
             ScaffoldMessenger.of(context).showMaterialBanner(
               MaterialBanner(
                 backgroundColor: Theme.of(context).buttonColor,
                 content: Text(
-                    '${_title.text} has been added to ${widget.shelf!.shelfName}'),
+                    '${_title.text} has been added to ${selectedShelf!.shelfName}'),
                 actions: [
                   TextButton(
                     child: const Text('Dismiss'),
@@ -519,7 +640,7 @@ class AddBookState extends ConsumerState<AddBook> {
         try {
           newBook.id = widget.book!.id;
           bool bookEdited =
-              await _db.editBook(newBook, widget.shelf!, _imageFile, kIsWeb);
+              await _db.editBook(newBook, selectedShelf!, _imageFile, kIsWeb);
           if (bookEdited) {
             ScaffoldMessenger.of(context).showMaterialBanner(
               MaterialBanner(
@@ -534,19 +655,21 @@ class AddBookState extends ConsumerState<AddBook> {
                 ],
               ),
             );
-            Future.delayed(const Duration(seconds: 3), () {
+            Future.delayed(const Duration(seconds: 4), () {
               setState(() {
                 _isLoading = false;
               });
-              Future.delayed(const Duration(seconds: 3), () {
+              Future.delayed(const Duration(seconds: 2), () {
                 ScaffoldMessenger.of(context).removeCurrentMaterialBanner();
                 Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) =>
-                        // BookDetails(book: newBook)
-                      const HomeScreen(),
-                    ),
-                        // (route) => false
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        // BookDetails(book: newBook) //returns null because of some fields not yet
+                                                      // initialized in newbook. need to get newbook from firestore
+                        const HomeScreen(),
+                  ),
+                  // (route) => false
                 );
               });
             });
@@ -576,12 +699,11 @@ class AddBookState extends ConsumerState<AddBook> {
             // height: _height / 4,
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.only(top:18.0),
+                padding: const EdgeInsets.only(top: 18.0),
                 child: Wrap(
                   children: [
                     Padding(
-                      padding:
-                          const EdgeInsets.only( left: 8, bottom: 8),
+                      padding: const EdgeInsets.only(left: 8, bottom: 8),
                       child: ListTile(
                         leading: const Icon(Icons.photo_library_rounded),
                         title: const Text('Gallery'),
@@ -625,21 +747,20 @@ class AddBookState extends ConsumerState<AddBook> {
           return SizedBox(
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.only(top:18.0),
+                padding: const EdgeInsets.only(top: 18.0),
                 child: Wrap(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.only( left: 8, bottom: 8),
+                      padding: const EdgeInsets.only(left: 8, bottom: 8),
                       child: ListTile(
                         leading: const Icon(Icons.clear_rounded),
                         title: const Text('Remove Image'),
                         onTap: () {
                           setState(() {
                             _imageTaken = false;
-                            if(widget.book != null) {
+                            if (widget.book != null) {
                               _imageFile = XFile('delete image');
-                              widget.book!.coverUrl = "";
-                            }else{
+                            } else {
                               _imageFile = XFile('no image');
                             }
                           });
@@ -648,15 +769,15 @@ class AddBookState extends ConsumerState<AddBook> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.only( left: 8, bottom: 8),
+                      padding: const EdgeInsets.only(left: 8, bottom: 8),
                       child: ListTile(
                         leading: const Icon(Icons.edit_rounded),
                         title: const Text('Change Image'),
                         onTap: () {
                           Navigator.pop(context);
-                          if(kIsWeb){
+                          if (kIsWeb) {
                             _webImageFromGallery();
-                          }else{
+                          } else {
                             _mobileSelectPicker();
                           }
                         },
@@ -686,17 +807,13 @@ class AddBookState extends ConsumerState<AddBook> {
       );
 
       if (_imageFile != null) {
-        _cropImage(_imageFile!.path)
-            .whenComplete(
-                () => setState((){
+        _cropImage(_imageFile!.path).whenComplete(() => setState(() {
               _imageTaken = true;
-            })
-        );
+            }));
       } else {
         showToast("No file selected");
       }
     } else {
-
       showToast("Permission not granted");
     }
   }
@@ -711,12 +828,9 @@ class AddBookState extends ConsumerState<AddBook> {
         maxWidth: 1000,
       );
       if (_imageFile != null) {
-        _cropImage(_imageFile!.path)
-            .whenComplete(
-                () => setState((){
-                  _imageTaken = true;
-                })
-        );
+        _cropImage(_imageFile!.path).whenComplete(() => setState(() {
+              _imageTaken = true;
+            }));
       } else {
         showToast("No file selected");
       }
@@ -730,22 +844,22 @@ class AddBookState extends ConsumerState<AddBook> {
         sourcePath: path,
         aspectRatioPresets: Platform.isAndroid
             ? [
-          CropAspectRatioPreset.square,
-          CropAspectRatioPreset.ratio3x2,
-          CropAspectRatioPreset.original,
-          CropAspectRatioPreset.ratio4x3,
-          CropAspectRatioPreset.ratio16x9
-        ]
+                CropAspectRatioPreset.square,
+                CropAspectRatioPreset.ratio3x2,
+                CropAspectRatioPreset.original,
+                CropAspectRatioPreset.ratio4x3,
+                CropAspectRatioPreset.ratio16x9
+              ]
             : [
-          CropAspectRatioPreset.original,
-          CropAspectRatioPreset.square,
-          CropAspectRatioPreset.ratio3x2,
-          CropAspectRatioPreset.ratio4x3,
-          CropAspectRatioPreset.ratio5x3,
-          CropAspectRatioPreset.ratio5x4,
-          CropAspectRatioPreset.ratio7x5,
-          CropAspectRatioPreset.ratio16x9
-        ],
+                CropAspectRatioPreset.original,
+                CropAspectRatioPreset.square,
+                CropAspectRatioPreset.ratio3x2,
+                CropAspectRatioPreset.ratio4x3,
+                CropAspectRatioPreset.ratio5x3,
+                CropAspectRatioPreset.ratio5x4,
+                CropAspectRatioPreset.ratio7x5,
+                CropAspectRatioPreset.ratio16x9
+              ],
         androidUiSettings: AndroidUiSettings(
             toolbarTitle: 'Cropper',
             toolbarColor: Theme.of(context).primaryColor,

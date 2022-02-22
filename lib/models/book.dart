@@ -26,7 +26,7 @@ class Book {
 
   factory Book.fromJson(Map<String, dynamic> json){
     return Book(
-      shelf: Shelf(shelfName: json['shelf'], id: json['shelf_id']),
+      shelf: Shelf(shelfName: json['shelf_name'], id: json['shelf_id']),
       title: json['title'] ?? '',
       author: json['author'] ?? '',
       genre: json['genre'] ?? '',
@@ -63,7 +63,7 @@ class Book {
   Map<String, dynamic> toFirebase() => _bookToFirebase(this);
 
   Map<String, dynamic> _bookToFirebase(Book book) => <String, dynamic>{
-    'shelf': book.shelf!.shelfName,
+    'shelf_name': book.shelf!.shelfName,
     'shelf_id': book.shelf!.id,
     'title': book.title,
     'author': book.author,

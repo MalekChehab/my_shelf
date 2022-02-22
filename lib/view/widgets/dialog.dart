@@ -9,6 +9,7 @@ class MyDialog extends StatelessWidget {
   final void Function() onPressed;
   final double? dialogHeight;
   late double _height;
+  final TextStyle? textStyle;
 
   MyDialog({
     required this.buttonLabel,
@@ -18,6 +19,7 @@ class MyDialog extends StatelessWidget {
       this.text,
       this.textField1,
       this.textField2,
+    this.textStyle,
         Key? key,
   }) : super(key: key);
 
@@ -37,7 +39,11 @@ class MyDialog extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              text != null ? Center(child: Text(text.toString())) : SizedBox(),
+              text != null ? Center(
+                  child: Text(
+                      text.toString(),
+                    style: textStyle,
+                  )) : SizedBox(),
               text != null ? SizedBox(height: _height / 50) : SizedBox(),
               const SizedBox(
                 height: 2,
